@@ -165,8 +165,8 @@
     function renderRed() {
       bar.className = "rw-contact-status red";
       showCont(false);
-      bar.innerHTML = "\uD83D\uDCDE <b>So your rep can reach you:</b> Please add your " + missing() +
-        '.';
+      bar.innerHTML = "\uD83D\uDCDE <b>Please add your " + missing() +
+        'for your assigned rep can reach you.';
     }
 
     function update() {
@@ -264,10 +264,7 @@
       ".rw-address-pulse{animation:rwPulse 1.25s ease-in-out infinite;border:2px solid rgba(180,48,23,.45) !important;}" +
       "@keyframes rwPulse{0%{box-shadow:0 0 0 0 rgba(180,48,23,.22);}70%{box-shadow:0 0 0 10px rgba(180,48,23,0);}100%{box-shadow:0 0 0 0 rgba(180,48,23,0);}}" +
       ".rw-address-collapsed [data-q='address']{display:none !important;}" +
-      ".rw-address-collapsed label{display:none !important;}" +
-      "#rw-addr-section{margin-bottom:0 !important;}" +
-      "#rw-addr-section > *{margin-bottom:0 !important;padding-bottom:0 !important;}" +
-      ".rw-confirm-card.green{margin-bottom:0 !important;}";
+      ".rw-address-collapsed label{display:none !important;}";
     document.head.appendChild(css);
   }
 
