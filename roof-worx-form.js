@@ -165,8 +165,8 @@
     function renderRed() {
       bar.className = "rw-contact-status red";
       showCont(false);
-      bar.innerHTML = "\uD83D\uDCDE <b>So your rep can reach you:</b> Please add your " + missing() +
-        '.';
+      bar.innerHTML = "\uD83D\uDCDE <b>Please add your " + missing() +
+        'for your assigned rep can reach you.';
     }
 
     function update() {
