@@ -1,31 +1,33 @@
 /**
  * Roof Worx — Combined Form Enhancement
  * =======================================
- * Script 1: Contact Status Card
- * Script 2: Google Places Address Autocomplete
- * Script 3: Appointment Details Hint
+ * Loads Google Maps, then runs all 3 scripts.
  *
- * Host: https://contractorauthority.github.io/roofing-booking/roof-worx-form.js
- *
- * HL Custom JS/HTML (one block):
- *   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAM1jRtR068AC7A5zK90RukGayTsGYxhpg&libraries=places"></script>
+ * HL Custom JS/HTML — ONE block, ONE line:
  *   <script src="https://contractorauthority.github.io/roofing-booking/roof-worx-form.js"></script>
  */
+
+/* ── Load Google Maps dynamically ── */
+(function() {
+  if (window.google && window.google.maps) return;
+  var s = document.createElement("script");
+  s.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyAM1jRtR068AC7A5zK90RukGayTsGYxhpg&libraries=places";
+  s.async = true;
+  document.head.appendChild(s);
+})();
+
 
 /* ═══════════════════════════════════════════════════════
    SCRIPT 1 — CONTACT STATUS CARD
 ═══════════════════════════════════════════════════════ */
 (function () {
   function closestFieldWrap(el) {
-    var node = el;
-    var i = 0;
+    var node = el, i = 0;
     while (node && i < 12) {
       if (node.className && typeof node.className === "string") {
-        if (
-          node.className.indexOf("form-group") > -1 ||
-          node.className.indexOf("field-container") > -1 ||
-          node.className.indexOf("col-") > -1
-        ) return node;
+        if (node.className.indexOf("form-group") > -1 ||
+            node.className.indexOf("field-container") > -1 ||
+            node.className.indexOf("col-") > -1) return node;
       }
       node = node.parentElement;
       i++;
@@ -35,356 +37,159 @@
 
   function addStylesOnce() {
     if (document.getElementById("rw-contact-status-styles")) return;
-
     var css = document.createElement("style");
     css.id = "rw-contact-status-styles";
-    css.type = "text/css";
     css.innerHTML =
-      ".rw-contact-status{" +
-        "margin:0 0 12px 0;" +
-        "padding:14px 16px;" +
-        "border-radius:12px;" +
-        "font-size:14px;" +
-        "line-height:1.55;" +
-        "text-align:left;" +
-        "border:1px solid rgba(0,0,0,0.06);" +
-        "box-shadow:0 10px 24px rgba(0,0,0,0.06);" +
-        "transition:background 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;" +
-      "}" +
-      ".rw-contact-status.green{" +
-        "background:rgba(0,128,0,0.08);" +
-        "color:#111111;" +
-        "border-color:rgba(31,90,42,0.12);" +
-      "}" +
-      ".rw-contact-status.red{" +
-        "background:rgba(180,48,23,0.07);" +
-        "color:#7a2717;" +
-        "border-color:rgba(180,48,23,0.12);" +
-      "}" +
-      ".rw-contact-title{" +
-        "font-size:27px;" +
-        "line-height:1.25;" +
-        "font-weight:750;" +
-        "margin:0 0 8px 0;" +
-        "letter-spacing:-0.2px;" +
-      "}" +
-      ".rw-contact-body{" +
-        "font-size:14px;" +
-        "line-height:1.6;" +
-        "margin:0;" +
-      "}" +
-      ".rw-contact-sub{" +
-        "margin-top:8px;" +
-        "opacity:0.92;" +
-      "}" +
-      ".rw-link-btn{" +
-        "background:transparent;" +
-        "border:0;" +
-        "padding:0;" +
-        "color:inherit;" +
-        "cursor:pointer;" +
-        "font-weight:700;" +
-        "border-bottom:1px solid rgba(0,0,0,0.22);" +
-      "}" +
-      ".rw-link-btn:hover{" +
-        "border-bottom-color:rgba(0,0,0,0.45);" +
-      "}" +
-      ".rw-link-btn:active{" +
-        "transform:translateY(1px);" +
-      "}" +
-      ".rw-contact-helper{" +
-        "opacity:0.82;" +
-        "font-size:13px;" +
-        "line-height:1.35;" +
-        "margin-top:2px;" +
-      "}" +
-      ".rw-next-step{" +
-        "margin-top:12px;" +
-        "padding-top:12px;" +
-        "border-top:1px solid rgba(0,0,0,0.06);" +
-        "font-size:13px;" +
-        "font-weight:500;" +
-        "opacity:0.92;" +
-      "}" +
-      ".rw-contact-status.green .rw-next-step{" +
-        "color:#1f5a2a;" +
-      "}" +
-      ".rw-saved{" +
-        "margin-top:10px;" +
-        "font-size:13px;" +
-        "font-weight:600;" +
-        "opacity:0.95;" +
-      "}" +
-      ".rw-continue-under{" +
-        "margin-top:10px;" +
-        "text-align:left;" +
-      "}" +
-      ".rw-continue-under .rw-continue-btn{" +
-        "background:transparent;" +
-        "border:0;" +
-        "padding:0;" +
-        "cursor:pointer;" +
-        "font-size:13px;" +
-        "font-weight:750;" +
-        "color:#111111;" +
-        "border-bottom:1px solid rgba(0,0,0,0.22);" +
-      "}" +
-      ".rw-continue-under .rw-continue-btn:hover{" +
-        "border-bottom-color:rgba(0,0,0,0.45);" +
-      "}" +
-      ".rw-contact-collapsed{ display:none !important; }";
-
+      ".rw-contact-status{margin:0 0 12px;padding:14px 16px;border-radius:12px;font-size:14px;line-height:1.55;text-align:left;border:1px solid rgba(0,0,0,0.06);box-shadow:0 10px 24px rgba(0,0,0,0.06);transition:background .25s,border-color .25s;}" +
+      ".rw-contact-status.green{background:rgba(0,128,0,0.08);color:#111;border-color:rgba(31,90,42,0.12);}" +
+      ".rw-contact-status.red{background:rgba(180,48,23,0.07);color:#7a2717;border-color:rgba(180,48,23,0.12);}" +
+      ".rw-contact-title{font-size:27px;line-height:1.25;font-weight:750;margin:0 0 8px;letter-spacing:-.2px;}" +
+      ".rw-contact-body{font-size:14px;line-height:1.6;margin:0;}" +
+      ".rw-link-btn{background:transparent;border:0;padding:0;color:inherit;cursor:pointer;font-weight:700;border-bottom:1px solid rgba(0,0,0,.22);}" +
+      ".rw-link-btn:hover{border-bottom-color:rgba(0,0,0,.45);}" +
+      ".rw-contact-helper{opacity:.82;font-size:13px;line-height:1.35;margin-top:2px;}" +
+      ".rw-next-step{margin-top:12px;padding-top:12px;border-top:1px solid rgba(0,0,0,.06);font-size:13px;font-weight:500;opacity:.92;}" +
+      ".rw-contact-status.green .rw-next-step{color:#1f5a2a;}" +
+      ".rw-saved{margin-top:10px;font-size:13px;font-weight:600;opacity:.95;}" +
+      ".rw-continue-under{margin-top:10px;text-align:left;}" +
+      ".rw-continue-under .rw-continue-btn{background:transparent;border:0;padding:0;cursor:pointer;font-size:13px;font-weight:750;color:#111;border-bottom:1px solid rgba(0,0,0,.22);}" +
+      ".rw-contact-collapsed{display:none !important;}";
     document.head.appendChild(css);
   }
 
-  function val(input) {
-    return input && input.value ? input.value.replace(/^\s+|\s+$/g, "") : "";
+  function byQ(q) {
+    return document.querySelector('[data-q="' + q + '"]') || document.querySelector('input[name="' + q + '"]');
   }
-  function hasValue(input) {
-    return val(input).length > 0;
-  }
-  function digitsOnly(s) {
-    return (s || "").replace(/\D+/g, "");
-  }
-  function formatPhone(raw) {
-    var d = digitsOnly(raw);
-    if (d.length === 11 && d.charAt(0) === "1") d = d.substring(1);
-    if (d.length < 10) return raw || "";
-    return "(" + d.substring(0,3) + ") " + d.substring(3,6) + "-" + d.substring(6,10);
-  }
-  function insertBeforeNode(targetNode, node) {
-    if (!targetNode || !targetNode.parentNode) return false;
-    targetNode.parentNode.insertBefore(node, targetNode);
-    return true;
-  }
-
-  function scrollToAddress() {
-    var addr = document.querySelector('[data-q="address"]') || document.querySelector('input[name="address"]');
-    if (!addr) return;
-    setTimeout(function () {
-      try { addr.scrollIntoView({ behavior: "smooth", block: "center" }); }
-      catch (e) { addr.scrollIntoView(true); }
-    }, 180);
-  }
-
-  function ensureContinueUnder(phoneWrap) {
-    if (!phoneWrap) return null;
-    var existing = document.getElementById("rw-contact-continue-under");
-    if (existing) return existing;
-
-    var wrap = document.createElement("div");
-    wrap.id = "rw-contact-continue-under";
-    wrap.className = "rw-continue-under";
-    wrap.style.display = "none";
-    wrap.innerHTML =
-      '<button type="button" class="rw-continue-btn" id="rw-contact-continue-btn">' +
-        "Update the contact info <span style='white-space:nowrap;'>→ Then (click here) continue to next step👍</span>" +
-      "</button>";
-
-    if (phoneWrap.parentNode) {
-      if (phoneWrap.nextSibling) phoneWrap.parentNode.insertBefore(wrap, phoneWrap.nextSibling);
-      else phoneWrap.parentNode.appendChild(wrap);
-    }
-    return wrap;
-  }
-
-  function showContinueUnder(show) {
-    var wrap = document.getElementById("rw-contact-continue-under");
-    if (!wrap) return;
-    wrap.style.display = show ? "block" : "none";
+  function val(el) { return el && el.value ? el.value.replace(/^\s+|\s+$/g,"") : ""; }
+  function hasVal(el) { return val(el).length > 0; }
+  function digits(s) { return (s||"").replace(/\D+/g,""); }
+  function fmtPhone(raw) {
+    var d = digits(raw);
+    if (d.length===11 && d[0]==="1") d=d.substring(1);
+    if (d.length<10) return raw||"";
+    return "("+d.substring(0,3)+") "+d.substring(3,6)+"-"+d.substring(6,10);
   }
 
   function initContactStatus() {
-    var first = document.querySelector('[data-q="first_name"]') || document.querySelector('input[name="first_name"]');
-    var last  = document.querySelector('[data-q="last_name"]')  || document.querySelector('input[name="last_name"]');
-    var phone = document.querySelector('[data-q="phone"]')      || document.querySelector('input[name="phone"]');
-    if (!first || !last || !phone) return false;
-
+    var first = byQ("first_name"), last = byQ("last_name"), phone = byQ("phone");
+    if (!first||!last||!phone) return false;
     addStylesOnce();
 
     var firstWrap = closestFieldWrap(first);
     var lastWrap  = closestFieldWrap(last);
     var phoneWrap = closestFieldWrap(phone);
 
-    ensureContinueUnder(phoneWrap);
+    // Continue link under phone
+    if (!document.getElementById("rw-contact-continue-under") && phoneWrap) {
+      var cw = document.createElement("div");
+      cw.id = "rw-contact-continue-under";
+      cw.className = "rw-continue-under";
+      cw.style.display = "none";
+      cw.innerHTML = '<button type="button" class="rw-continue-btn" id="rw-contact-continue-btn">Update the contact info <span style="white-space:nowrap;">\u2192 Then (click here) continue to next step\uD83D\uDC4D</span></button>';
+      if (phoneWrap.nextSibling) phoneWrap.parentNode.insertBefore(cw, phoneWrap.nextSibling);
+      else phoneWrap.parentNode.appendChild(cw);
+    }
 
     var bar = document.getElementById("rw-contact-status");
     if (!bar) {
       bar = document.createElement("div");
       bar.id = "rw-contact-status";
       bar.className = "rw-contact-status red";
-      if (!insertBeforeNode(firstWrap || first, bar)) return false;
+      if (!(firstWrap||first).parentNode) return false;
+      (firstWrap||first).parentNode.insertBefore(bar, firstWrap||first);
     }
 
-    var expandedByUser = false;
-    var lastSnapshot = "";
-    var savedTimer = null;
+    var expandedByUser = false, lastSnap = "", savedTimer = null;
 
-    function collapseFields() {
-      if (firstWrap) firstWrap.classList.add("rw-contact-collapsed");
-      if (lastWrap)  lastWrap.classList.add("rw-contact-collapsed");
-      if (phoneWrap) phoneWrap.classList.add("rw-contact-collapsed");
-    }
+    function collapse() { [firstWrap,lastWrap,phoneWrap].forEach(function(w){if(w)w.classList.add("rw-contact-collapsed");}); }
+    function expand()   { [firstWrap,lastWrap,phoneWrap].forEach(function(w){if(w)w.classList.remove("rw-contact-collapsed");}); }
+    function showCont(v) { var el=document.getElementById("rw-contact-continue-under"); if(el)el.style.display=v?"block":"none"; }
 
-    function expandFields() {
-      if (firstWrap) firstWrap.classList.remove("rw-contact-collapsed");
-      if (lastWrap)  lastWrap.classList.remove("rw-contact-collapsed");
-      if (phoneWrap) phoneWrap.classList.remove("rw-contact-collapsed");
-    }
-
-    function missingText(firstOk, lastOk, phoneOk) {
-      var m = [];
-      if (!firstOk) m.push("first name");
-      if (!lastOk)  m.push("last name");
-      if (!phoneOk) m.push("phone number");
-      if (m.length === 1) return m[0];
-      if (m.length === 2) return m[0] + " and " + m[1];
-      return m[0] + ", " + m[1] + ", and " + m[2];
-    }
-
-    function currentSnapshot() {
-      return (val(first) + "|" + val(last) + "|" + digitsOnly(val(phone)));
-    }
-
-    function clearTimers() {
-      if (savedTimer) { clearTimeout(savedTimer); savedTimer = null; }
-    }
-
-    function allOkNow() {
-      var firstOk = hasValue(first);
-      var lastOk  = hasValue(last);
-      var d = digitsOnly(val(phone));
-      if (d.length === 11 && d.charAt(0) === "1") d = d.substring(1);
-      var phoneOk = d.length >= 10;
-      return firstOk && lastOk && phoneOk;
+    function phoneOk() { var d=digits(val(phone)); if(d.length===11&&d[0]==="1")d=d.substring(1); return d.length>=10; }
+    function allOk() { return hasVal(first)&&hasVal(last)&&phoneOk(); }
+    function snap() { return val(first)+"|"+val(last)+"|"+digits(val(phone)); }
+    function missing() {
+      var m=[];
+      if(!hasVal(first))m.push("first name");
+      if(!hasVal(last))m.push("last name");
+      if(!phoneOk())m.push("phone number");
+      return m.length===1?m[0]:m.length===2?m[0]+" and "+m[1]:m[0]+", "+m[1]+", and "+m[2];
     }
 
     function wireContinue() {
-      var cont = document.getElementById("rw-contact-continue-btn");
-      if (!cont) return;
-      cont.onclick = function () {
-        if (!allOkNow()) return;
-        clearTimers();
+      var btn = document.getElementById("rw-contact-continue-btn");
+      if (!btn) return;
+      btn.onclick = function() {
+        if (!allOk()) return;
+        if (savedTimer) clearTimeout(savedTimer);
         expandedByUser = false;
-        showContinueUnder(false);
-        collapseFields();
-        renderGreen(val(first), formatPhone(val(phone)), false, false);
-        scrollToAddress();
+        showCont(false);
+        collapse();
+        renderGreen(false, false);
+        var addr = byQ("address");
+        if (addr) setTimeout(function(){ try{addr.scrollIntoView({behavior:"smooth",block:"center"});}catch(e){} }, 180);
       };
     }
 
-    function renderGreen(firstName, phonePretty, showSaved, showEditingMode) {
-      bar.classList.remove("red");
-      bar.classList.add("green");
-
-      var nextHtml = showEditingMode
-        ? ""
-        : '<div class="rw-next-step">Next: confirm your property address below. 👇</div>';
-
+    function renderGreen(saved, editing) {
+      bar.className = "rw-contact-status green";
       bar.innerHTML =
-        '<div class="rw-contact-title">👋 Nice to meet you' + (firstName ? ", " + firstName : "") + "!</div>" +
-        '<div class="rw-contact-body">' +
-          "Your assigned Roof Worx professional will call or text you the morning of your appointment at <b>" + phonePretty + "</b> to confirm their anticipated arrival time within your selected 2-hour window." +
-          "<br><br>" +
-          "<span style=\"opacity:.9\">Being available allows us to walk the property with you, provide a professional evaluation, answer your questions, and make sure our guidance is tailored to your property.</span>" +
-          "<br><br>" +
-        "</div>" +
-        '<div style="margin-top:10px;">' +
-          '<button type="button" class="rw-link-btn" id="rw-change-best-contact">→ Change best contact</button>' +
-          '<div class="rw-contact-helper">(person that will be at property)</div>' +
-        "</div>" +
-        (showSaved ? '<div class="rw-saved">✅ Contact details updated.</div>' : "") +
-        nextHtml;
-
+        '<div class="rw-contact-title">\uD83D\uDC4B Nice to meet you' + (val(first)?", "+val(first):"") + "!</div>" +
+        '<div class="rw-contact-body">Your assigned Roof Worx professional will call or text you the morning of your appointment at <b>' + fmtPhone(val(phone)) + '</b> to confirm their anticipated arrival time within your selected 2-hour window.<br><br>' +
+        '<span style="opacity:.9">Being available allows us to walk the property with you, provide a professional evaluation, answer your questions, and make sure our guidance is tailored to your property.</span><br><br></div>' +
+        '<div style="margin-top:10px;"><button type="button" class="rw-link-btn" id="rw-change-best-contact">\u2192 Change best contact</button>' +
+        '<div class="rw-contact-helper">(person that will be at property)</div></div>' +
+        (saved ? '<div class="rw-saved">\u2705 Contact details updated.</div>' : "") +
+        (editing ? "" : '<div class="rw-next-step">Next: confirm your property address below. \uD83D\uDC47</div>');
       var btn = document.getElementById("rw-change-best-contact");
-      if (btn) {
-        btn.onclick = function () {
-          clearTimers();
-          expandedByUser = true;
-          expandFields();
-          showContinueUnder(true);
-          wireContinue();
-          lastSnapshot = currentSnapshot();
-          try { first.focus(); } catch (e) {}
-        };
-      }
+      if (btn) btn.onclick = function() {
+        if (savedTimer) clearTimeout(savedTimer);
+        expandedByUser = true;
+        expand();
+        showCont(true);
+        wireContinue();
+        lastSnap = snap();
+        try{first.focus();}catch(e){}
+      };
     }
 
-    function renderRed(missing) {
-      bar.classList.remove("green");
-      bar.classList.add("red");
-      showContinueUnder(false);
-      bar.innerHTML =
-        "\uD83D\uDCDE <b>So your rep can reach you:</b> Please add your " + missing + "." +
-        '<div class="rw-next-step">Next: confirm your property address below. 👇</div>';
+    function renderRed() {
+      bar.className = "rw-contact-status red";
+      showCont(false);
+      bar.innerHTML = "\uD83D\uDCDE <b>So your rep can reach you:</b> Please add your " + missing() +
+        '.<div class="rw-next-step">Next: confirm your property address below. \uD83D\uDC47</div>';
     }
 
     function update() {
-      var firstOk = hasValue(first);
-      var lastOk  = hasValue(last);
-      var d = digitsOnly(val(phone));
-      if (d.length === 11 && d.charAt(0) === "1") d = d.substring(1);
-      var phoneOk = d.length >= 10;
-      var allOk = firstOk && lastOk && phoneOk;
-      var snap = currentSnapshot();
-      var changed = (snap !== lastSnapshot);
-
-      if (!allOk) {
-        clearTimers();
-        expandedByUser = false;
-        expandFields();
-        renderRed(missingText(firstOk, lastOk, phoneOk));
-        lastSnapshot = snap;
-        return;
+      var ok = allOk(), s = snap(), changed = s!==lastSnap;
+      if (!ok) {
+        if(savedTimer)clearTimeout(savedTimer);
+        expandedByUser=false; expand(); renderRed(); lastSnap=s; return;
       }
-
       if (expandedByUser) {
-        showContinueUnder(true);
-        wireContinue();
+        showCont(true); wireContinue();
         if (changed) {
-          renderGreen(val(first), formatPhone(val(phone)), true, true);
-          clearTimers();
-          savedTimer = setTimeout(function () {
-            if (expandedByUser) {
-              renderGreen(val(first), formatPhone(val(phone)), false, true);
-              showContinueUnder(true);
-              wireContinue();
-            }
-          }, 1400);
-          lastSnapshot = snap;
-        } else {
-          renderGreen(val(first), formatPhone(val(phone)), false, true);
-        }
+          renderGreen(true,true);
+          if(savedTimer)clearTimeout(savedTimer);
+          savedTimer=setTimeout(function(){if(expandedByUser){renderGreen(false,true);showCont(true);wireContinue();}},1400);
+          lastSnap=s;
+        } else renderGreen(false,true);
         return;
       }
-
-      showContinueUnder(false);
-      collapseFields();
-      renderGreen(val(first), formatPhone(val(phone)), false, false);
-      lastSnapshot = snap;
+      showCont(false); collapse(); renderGreen(false,false); lastSnap=s;
     }
 
     update();
-    first.addEventListener("input", update);
-    last.addEventListener("input", update);
-    phone.addEventListener("input", update);
+    first.addEventListener("input",update);
+    last.addEventListener("input",update);
+    phone.addEventListener("input",update);
     return true;
   }
 
-  function boot() {
-    var tries = 0;
-    (function retry() {
-      tries++;
-      if (initContactStatus()) return;
-      if (tries < 80) setTimeout(retry, 100);
-    })();
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", boot);
-  } else {
-    boot();
-  }
+  (function boot() {
+    var t=0;
+    (function retry(){ t++; if(initContactStatus())return; if(t<80)setTimeout(retry,100); })();
+  })();
 })();
 
 
@@ -392,16 +197,18 @@
    SCRIPT 2 — GOOGLE PLACES ADDRESS AUTOCOMPLETE
 ═══════════════════════════════════════════════════════ */
 (function () {
+  function byQ(q) {
+    return document.querySelector('[data-q="' + q + '"]') ||
+           document.querySelector('input[name="' + q + '"]');
+  }
+
   function closestFieldWrap(el) {
-    var node = el;
-    var i = 0;
+    var node = el, i = 0;
     while (node && i < 12) {
       if (node.className && typeof node.className === "string") {
-        if (
-          node.className.indexOf("form-group") > -1 ||
-          node.className.indexOf("field-container") > -1 ||
-          node.className.indexOf("col-") > -1
-        ) return node;
+        if (node.className.indexOf("form-group") > -1 ||
+            node.className.indexOf("field-container") > -1 ||
+            node.className.indexOf("col-") > -1) return node;
       }
       node = node.parentElement;
       i++;
@@ -409,425 +216,210 @@
     return el && el.parentElement ? el.parentElement : el;
   }
 
-  function fieldByQ(q) {
-    return document.querySelector('[data-q="' + q + '"]') ||
-           document.querySelector('input[name="' + q + '"]') ||
-           document.querySelector('textarea[name="' + q + '"]');
-  }
-
-  function hideFieldByQ(q) {
-    var el = fieldByQ(q);
-    if (!el) return;
-    var wrap = closestFieldWrap(el);
-    if (wrap && wrap.style) wrap.style.display = "none";
-  }
-
+  // Hide city/state/postal by targeting their wrappers via data-q
+  // Uses CSS injection so it works even inside compound field groups
   function hideAddressParts() {
-    hideFieldByQ("city");
-    hideFieldByQ("state");
-    hideFieldByQ("postal_code");
+    if (document.getElementById("rw-hide-addr-parts")) return;
+    var style = document.createElement("style");
+    style.id = "rw-hide-addr-parts";
+    // Find the actual wrappers and hide via inline style (more reliable than CSS class in compound fields)
+    document.head.appendChild(style);
+
+    ["city","state","postal_code"].forEach(function(q) {
+      var el = byQ(q);
+      if (!el) return;
+      var wrap = closestFieldWrap(el);
+      if (wrap) wrap.style.display = "none";
+    });
   }
 
   function addStylesOnce() {
     if (document.getElementById("rw-address-styles")) return;
-
     var css = document.createElement("style");
     css.id = "rw-address-styles";
-    css.type = "text/css";
     css.innerHTML =
-      ".rw-confirm-card{" +
-        "margin:0 0 12px 0;" +
-        "padding:14px 16px;" +
-        "border-radius:12px;" +
-        "font-size:14px;" +
-        "line-height:1.5;" +
-        "text-align:left;" +
-        "border:1px solid rgba(0,0,0,0.06);" +
-        "box-shadow:0 10px 24px rgba(0,0,0,0.06);" +
-        "transition:background 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;" +
-      "}" +
-      ".rw-confirm-card.red{" +
-        "background:rgba(180,48,23,0.07);" +
-        "color:#111111;" +
-        "border-color:rgba(180,48,23,0.14);" +
-      "}" +
-      ".rw-confirm-card.green{" +
-        "background:rgba(0,128,0,0.08);" +
-        "color:#111111;" +
-        "border-color:rgba(31,90,42,0.12);" +
-      "}" +
-      ".rw-confirm-title{" +
-        "font-weight:750;" +
-        "margin:0 0 6px 0;" +
-        "font-size:15px;" +
-      "}" +
-      ".rw-confirm-sub{" +
-        "opacity:0.92;" +
-        "margin:0;" +
-        "font-size:13px;" +
-        "line-height:1.45;" +
-      "}" +
-      ".rw-confirm-addr{" +
-        "margin:12px 0 0 0;" +
-        "padding:10px 12px;" +
-        "border-radius:10px;" +
-        "background:#ffffff;" +
-        "color:#111111;" +
-        "border:1px solid rgba(0,0,0,0.10);" +
-        "font-weight:650;" +
-      "}" +
-      ".rw-confirm-actions{" +
-        "margin:10px 0 0 0;" +
-        "display:flex;" +
-        "gap:10px;" +
-        "flex-wrap:wrap;" +
-        "align-items:center;" +
-        "font-size:13px;" +
-        "opacity:0.95;" +
-      "}" +
-      ".rw-confirm-btn{" +
-        "display:block;" +
-        "width:100%;" +
-        "margin:12px 0 0 0;" +
-        "padding:12px 14px;" +
-        "border-radius:12px;" +
-        "border:1px solid rgba(180,48,23,0.26);" +
-        "background:rgba(180,48,23,0.12);" +
-        "color:#111111;" +
-        "font-size:14px;" +
-        "font-weight:900;" +
-        "cursor:pointer;" +
-        "text-align:center;" +
-        "box-shadow:0 12px 26px rgba(0,0,0,0.10);" +
-        "transition:background 0.2s ease, box-shadow 0.2s ease, transform 0.06s ease;" +
-      "}" +
-      ".rw-confirm-btn:hover{" +
-        "background:rgba(180,48,23,0.16);" +
-        "box-shadow:0 16px 34px rgba(0,0,0,0.14);" +
-        "transform:translateY(-1px);" +
-      "}" +
-      ".rw-confirm-btn:active{" +
-        "transform:translateY(0px) scale(0.99);" +
-      "}" +
-      "[data-q='address']{" +
-        "background:#ffffff !important;" +
-        "color:#111111 !important;" +
-      "}" +
-      ".rw-address-empty{" +
-        "border:3px solid rgba(0,128,0,0.38) !important;" +
-        "border-radius:12px !important;" +
-        "box-shadow:0 0 0 6px rgba(0,128,0,0.10) !important;" +
-      "}" +
-      ".rw-address-pulse{" +
-        "animation: rwPulse 1.25s ease-in-out infinite;" +
-        "border:2px solid rgba(180,48,23,0.45) !important;" +
-        "box-shadow: 0 0 0 6px rgba(180,48,23,0.10) !important;" +
-      "}" +
-      "@keyframes rwPulse{" +
-        "0%{ box-shadow: 0 0 0 0 rgba(180,48,23,0.22); }" +
-        "70%{ box-shadow: 0 0 0 10px rgba(180,48,23,0.00); }" +
-        "100%{ box-shadow: 0 0 0 0 rgba(180,48,23,0.00); }" +
-      "}" +
-      ".rw-address-collapsed [data-q='address']{" +
-        "display:none !important;" +
-      "}" +
-      ".rw-address-collapsed label{" +
-        "display:none !important;" +
-      "}";
+      ".rw-confirm-card{margin:0 0 12px;padding:14px 16px;border-radius:12px;font-size:14px;line-height:1.5;text-align:left;border:1px solid rgba(0,0,0,.06);box-shadow:0 10px 24px rgba(0,0,0,.06);transition:background .25s,border-color .25s;}" +
+      ".rw-confirm-card.red{background:rgba(180,48,23,.07);color:#111;border-color:rgba(180,48,23,.14);}" +
+      ".rw-confirm-card.green{background:rgba(0,128,0,.08);color:#111;border-color:rgba(31,90,42,.12);}" +
+      ".rw-confirm-title{font-weight:750;margin:0 0 6px;font-size:15px;}" +
+      ".rw-confirm-sub{opacity:.92;margin:0;font-size:13px;line-height:1.45;}" +
+      ".rw-confirm-addr{margin:12px 0 0;padding:10px 12px;border-radius:10px;background:#fff;color:#111;border:1px solid rgba(0,0,0,.10);font-weight:650;}" +
+      ".rw-confirm-actions{margin:10px 0 0;display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:13px;opacity:.95;}" +
+      ".rw-confirm-btn{display:block;width:100%;margin:12px 0 0;padding:12px 14px;border-radius:12px;border:1px solid rgba(180,48,23,.26);background:rgba(180,48,23,.12);color:#111;font-size:14px;font-weight:900;cursor:pointer;text-align:center;box-shadow:0 12px 26px rgba(0,0,0,.10);transition:background .2s,box-shadow .2s,transform .06s;}" +
+      ".rw-confirm-btn:hover{background:rgba(180,48,23,.16);box-shadow:0 16px 34px rgba(0,0,0,.14);transform:translateY(-1px);}" +
+      ".rw-confirm-btn:active{transform:scale(.99);}" +
+      "[data-q='address']{background:#fff !important;color:#111 !important;}" +
+      ".rw-address-empty{border:3px solid rgba(0,128,0,.38) !important;border-radius:12px !important;box-shadow:0 0 0 6px rgba(0,128,0,.10) !important;}" +
+      ".rw-address-pulse{animation:rwPulse 1.25s ease-in-out infinite;border:2px solid rgba(180,48,23,.45) !important;}" +
+      "@keyframes rwPulse{0%{box-shadow:0 0 0 0 rgba(180,48,23,.22);}70%{box-shadow:0 0 0 10px rgba(180,48,23,0);}100%{box-shadow:0 0 0 0 rgba(180,48,23,0);}}" +
+      ".rw-address-collapsed [data-q='address']{display:none !important;}" +
+      ".rw-address-collapsed label{display:none !important;}";
     document.head.appendChild(css);
   }
 
-  function tryEnableInput(input) {
-    try { input.removeAttribute("readonly"); } catch (e) {}
-    try { input.removeAttribute("disabled"); } catch (e) {}
+  function tryEnable(el) {
+    try{el.removeAttribute("readonly");}catch(e){}
+    try{el.removeAttribute("disabled");}catch(e){}
   }
 
-  function ensureCard(addressWrap) {
-    var existing = document.getElementById("rw-confirm-card");
-    if (existing) return existing;
-
+  function ensureCard(wrap) {
+    if (document.getElementById("rw-confirm-card")) return document.getElementById("rw-confirm-card");
     var card = document.createElement("div");
     card.id = "rw-confirm-card";
     card.className = "rw-confirm-card red";
-
-    var title = document.createElement("div");
-    title.className = "rw-confirm-title";
-    title.id = "rw-confirm-title";
-
-    var sub = document.createElement("div");
-    sub.className = "rw-confirm-sub";
-    sub.id = "rw-confirm-sub";
-
-    var btn = document.createElement("button");
-    btn.type = "button";
-    btn.id = "rw-confirm-btn";
-    btn.className = "rw-confirm-btn";
-
-    var addr = document.createElement("div");
-    addr.id = "rw-confirm-addr";
-    addr.className = "rw-confirm-addr";
-    addr.style.display = "none";
-
-    var actions = document.createElement("div");
-    actions.id = "rw-confirm-actions";
-    actions.className = "rw-confirm-actions";
-    actions.style.display = "none";
-    actions.innerHTML =
-      '<button type="button" class="rw-link-btn" id="rw-change-address">Change address</button>' +
-      '<span>or add notes below, then press <b>Book Your Pro Consultation</b>.</span>';
-
-    card.appendChild(title);
-    card.appendChild(sub);
-    card.appendChild(btn);
-    card.appendChild(addr);
-    card.appendChild(actions);
-
-    if (addressWrap && addressWrap.parentNode) {
-      addressWrap.parentNode.insertBefore(card, addressWrap);
-    }
-
+    card.innerHTML =
+      '<div class="rw-confirm-title" id="rw-confirm-title"></div>' +
+      '<div class="rw-confirm-sub" id="rw-confirm-sub"></div>' +
+      '<button type="button" id="rw-confirm-btn" class="rw-confirm-btn" style="display:none"></button>' +
+      '<div id="rw-confirm-addr" class="rw-confirm-addr" style="display:none"></div>' +
+      '<div id="rw-confirm-actions" class="rw-confirm-actions" style="display:none">' +
+        '<button type="button" class="rw-link-btn" id="rw-change-address">Change address</button>' +
+        '<span>or add notes below, then press <b>Book Your Pro Consultation</b>.</span>' +
+      '</div>';
+    if (wrap && wrap.parentNode) wrap.parentNode.insertBefore(card, wrap);
     return card;
   }
 
-  function setCardState(state, titleHtml, subHtml, btnLabel, showBtn) {
-    var card = document.getElementById("rw-confirm-card");
-    if (!card) return;
-    card.classList.remove("red");
-    card.classList.remove("green");
+  function setCard(state, title, sub, btnLabel, showBtn) {
+    var card=document.getElementById("rw-confirm-card");
+    if(!card)return;
+    card.classList.remove("red","green");
     card.classList.add(state);
-    var t = document.getElementById("rw-confirm-title");
-    var s = document.getElementById("rw-confirm-sub");
-    var b = document.getElementById("rw-confirm-btn");
-    var addr = document.getElementById("rw-confirm-addr");
-    var actions = document.getElementById("rw-confirm-actions");
-    if (t) t.innerHTML = titleHtml || "";
-    if (s) s.innerHTML = subHtml || "";
-    if (b) {
-      if (btnLabel) b.innerHTML = btnLabel;
-      b.style.display = showBtn ? "block" : "none";
-    }
-    if (addr) addr.style.display = "none";
-    if (actions) actions.style.display = "none";
-  }
-
-  function scrollToNotes() {
-    var notes = document.querySelector('[data-q="appointment_details"]') || document.querySelector("textarea");
-    if (!notes) return;
-    setTimeout(function () {
-      try { notes.scrollIntoView({ behavior: "smooth", block: "center" }); }
-      catch (err) { notes.scrollIntoView(true); }
-    }, 250);
+    var t=document.getElementById("rw-confirm-title");
+    var s=document.getElementById("rw-confirm-sub");
+    var b=document.getElementById("rw-confirm-btn");
+    var a=document.getElementById("rw-confirm-addr");
+    var ac=document.getElementById("rw-confirm-actions");
+    if(t)t.innerHTML=title||"";
+    if(s)s.innerHTML=sub||"";
+    if(b){if(btnLabel)b.innerHTML=btnLabel;b.style.display=showBtn?"block":"none";}
+    if(a)a.style.display="none";
+    if(ac)ac.style.display="none";
   }
 
   function initAutocomplete() {
-    var input = fieldByQ("address");
+    var input = byQ("address");
     if (!input) return;
 
     addStylesOnce();
     hideAddressParts();
-    tryEnableInput(input);
+    tryEnable(input);
 
-    var addressWrap = closestFieldWrap(input);
-    if (!addressWrap) return;
-
-    ensureCard(addressWrap);
-
-    function collapseAddress() {
-      if (addressWrap) addressWrap.classList.add("rw-address-collapsed");
-    }
-
-    function expandAddress() {
-      if (addressWrap) addressWrap.classList.remove("rw-address-collapsed");
-    }
-
-    function hasValueNow() {
-      return !!(input.value && input.value.replace(/\s+/g, "").length > 0);
-    }
-
-    function setEmptyHighlight(on) {
-      if (!input) return;
-      if (on) input.classList.add("rw-address-empty");
-      else input.classList.remove("rw-address-empty");
-    }
-
-    function fullAddressString() {
-      var street = (input.value || "").replace(/\s+/g, " ").trim();
-      var cityEl   = fieldByQ("city");
-      var stateEl  = fieldByQ("state");
-      var zipEl    = fieldByQ("postal_code");
-      var city  = cityEl  && cityEl.value  ? cityEl.value.trim()  : "";
-      var st    = stateEl && stateEl.value ? stateEl.value.trim() : "";
-      var zip   = zipEl   && zipEl.value   ? zipEl.value.trim()   : "";
-      var line2 = "";
-      if (city) line2 += city;
-      if (st)   line2 += (line2 ? ", " : "") + st;
-      if (zip)  line2 += (line2 ? " " : "") + zip;
-      return street + (line2 ? " - " + line2 : "");
-    }
+    var addrWrap = closestFieldWrap(input);
+    if (!addrWrap) return;
+    ensureCard(addrWrap);
 
     var confirmed = false;
 
-    function showEmpty() {
-      confirmed = false;
-      expandAddress();
-      input.classList.remove("rw-address-pulse");
-      setEmptyHighlight(true);
-      setCardState("red", "Enter your street address", "Start typing and select the correct property from the dropdown list.", "", false);
+    function fullAddr() {
+      var street = (input.value||"").trim();
+      var c=byQ("city"), st=byQ("state"), z=byQ("postal_code");
+      var parts=[street];
+      if(c&&c.value.trim())parts.push(c.value.trim());
+      if(st&&st.value.trim())parts.push(st.value.trim());
+      if(z&&z.value.trim())parts.push(z.value.trim());
+      return parts.filter(Boolean).join(", ");
     }
 
-    function showNeedsConfirm(isInitialPrefill) {
-      confirmed = false;
-      expandAddress();
+    function showEmpty() {
+      confirmed=false;
+      addrWrap.classList.remove("rw-address-collapsed");
+      input.classList.remove("rw-address-pulse");
+      input.classList.add("rw-address-empty");
+      setCard("red","Enter your street address","Start typing and select the correct property from the dropdown list.","",false);
+    }
+
+    function showNeedsConfirm(prefill) {
+      confirmed=false;
+      addrWrap.classList.remove("rw-address-collapsed");
+      input.classList.remove("rw-address-empty");
       input.classList.add("rw-address-pulse");
-      setEmptyHighlight(false);
-      if (isInitialPrefill) {
-        setCardState("red", "Confirm your property address for your <b>Pro Consultation</b>", "Your address was pre-filled. Click below to open the Google Maps dropdown and select the correct property to confirm. \uD83D\uDC47", "\uD83D\uDCCD Open Google Maps dropdown", true);
-      } else {
-        setCardState("red", "Confirm your property address for your <b>Pro Consultation</b>", "Select the correct property from the dropdown list to confirm.", "", false);
-      }
+      if(prefill) setCard("red","Confirm your property address for your <b>Pro Consultation</b>","Your address was pre-filled. Click below to open the Google Maps dropdown and select the correct property to confirm. \uD83D\uDC47","\uD83D\uDCCD Open Google Maps dropdown",true);
+      else setCard("red","Confirm your property address for your <b>Pro Consultation</b>","Select the correct property from the dropdown list to confirm.","",false);
     }
 
     function showConfirmed() {
-      confirmed = true;
-      input.classList.remove("rw-address-pulse");
-      setEmptyHighlight(false);
-      collapseAddress();
-      setCardState("green", "\uD83D\uDC4D Address confirmed", "Perfect. Add any helpful notes below, then press <b>Book Your Pro Consultation</b>.", "", false);
-      var addr = document.getElementById("rw-confirm-addr");
-      var actions = document.getElementById("rw-confirm-actions");
-      if (addr) {
-        addr.textContent = fullAddressString() || (input.value || "");
-        addr.style.display = "block";
-      }
-      if (actions) actions.style.display = "flex";
-      scrollToNotes();
+      confirmed=true;
+      input.classList.remove("rw-address-pulse","rw-address-empty");
+      addrWrap.classList.add("rw-address-collapsed");
+      setCard("green","\uD83D\uDC4D Address confirmed","Perfect. Add any helpful notes below, then press <b>Book Your Pro Consultation</b>.","",false);
+      var a=document.getElementById("rw-confirm-addr");
+      var ac=document.getElementById("rw-confirm-actions");
+      if(a){a.textContent=fullAddr()||input.value||"";a.style.display="block";}
+      if(ac)ac.style.display="flex";
+      var notes = document.querySelector('[data-q="appointment_details"]') || document.querySelector("textarea");
+      if(notes)setTimeout(function(){try{notes.scrollIntoView({behavior:"smooth",block:"center"});}catch(e){}},250);
     }
 
-    var changeBtn = document.getElementById("rw-change-address");
-    if (changeBtn) {
-      changeBtn.addEventListener("click", function () {
-        confirmed = false;
-        expandAddress();
-        try { input.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) { input.scrollIntoView(true); }
-        setTimeout(function () {
-          try { input.focus(); } catch (err) {}
-          showNeedsConfirm(false);
-        }, 150);
+    // Wire change address button (created in ensureCard)
+    setTimeout(function() {
+      var chg=document.getElementById("rw-change-address");
+      if(chg) chg.addEventListener("click",function(){
+        confirmed=false;
+        addrWrap.classList.remove("rw-address-collapsed");
+        setTimeout(function(){try{input.focus();}catch(e){}showNeedsConfirm(false);},150);
       });
-    }
-
-    var btn = document.getElementById("rw-confirm-btn");
-    if (btn) {
-      btn.addEventListener("click", function () {
-        tryEnableInput(input);
-        try { input.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (err) { input.scrollIntoView(true); }
-        setTimeout(function () {
-          try { input.focus(); } catch (e) {}
-          // Trigger dropdown by dispatching a keyboard event
-          try {
-            var v = input.value || "";
-            input.value = v + " ";
-            input.dispatchEvent(new Event("input", { bubbles: true }));
-            input.value = v;
-            input.dispatchEvent(new Event("input", { bubbles: true }));
-          } catch (e2) {}
-        }, 120);
+      var btn=document.getElementById("rw-confirm-btn");
+      if(btn) btn.addEventListener("click",function(){
+        tryEnable(input);
+        setTimeout(function(){
+          try{input.focus();}catch(e){}
+          try{
+            var v=input.value||"";
+            input.value=v+" ";
+            input.dispatchEvent(new Event("input",{bubbles:true}));
+            input.value=v;
+            input.dispatchEvent(new Event("input",{bubbles:true}));
+          }catch(e2){}
+        },120);
       });
-    }
+    }, 100);
 
-    var componentForm = {
-      street_number: "short_name",
-      route: "long_name",
-      locality: "long_name",
-      administrative_area_level_1: "short_name",
-      country: "long_name",
-      postal_code: "short_name"
-    };
-
-    var autocomplete = new google.maps.places.Autocomplete(input, { types: ["address"] });
-    if (autocomplete.setFields) autocomplete.setFields(["address_component"]);
-
-    autocomplete.addListener("place_changed", function () {
-      var place = autocomplete.getPlace();
-      if (!place || !place.address_components) return;
-
-      var cityEl   = fieldByQ("city");
-      var stateEl  = fieldByQ("state");
-      var zipEl    = fieldByQ("postal_code");
-      var street = "";
-
-      for (var i = 0; i < place.address_components.length; i++) {
-        var comp = place.address_components[i];
-        var type = comp.types && comp.types[0];
-        var key  = componentForm[type];
-        if (!key) continue;
-        var v = comp[key];
-        if (type === "street_number") street = v;
-        else if (type === "route") street = (street ? street + " " : "") + v;
-        else if (type === "locality"                    && cityEl)  cityEl.value  = v;
-        else if (type === "administrative_area_level_1" && stateEl) stateEl.value = v;
-        else if (type === "postal_code"                 && zipEl)   zipEl.value   = v;
-      }
-
-      if (street) input.value = street;
-
-      // Fire change events using modern API (no createEvent/initEvent)
-      var ev = new Event("input", { bubbles: true });
-      input.dispatchEvent(ev);
-      if (cityEl)  cityEl.dispatchEvent(ev);
-      if (stateEl) stateEl.dispatchEvent(ev);
-      if (zipEl)   zipEl.dispatchEvent(ev);
-
-      showConfirmed();
-
-      setTimeout(function () {
-        var pac = document.querySelector(".pac-container");
-        if (pac) pac.style.display = "none";
-      }, 300);
-    });
-
-    if (!hasValueNow()) showEmpty();
-    else showNeedsConfirm(true);
-
-    if (hasValueNow()) {
-      setTimeout(function () {
-        try { input.scrollIntoView({ behavior: "smooth", block: "center" }); }
-        catch (err) { input.scrollIntoView(true); }
-      }, 250);
-    }
-
-    input.addEventListener("focus", function () {
-      tryEnableInput(input);
-      if (!hasValueNow()) showEmpty();
-      else if (!confirmed) showNeedsConfirm(false);
-    });
-
-    input.addEventListener("input", function () {
-      tryEnableInput(input);
-      if (!hasValueNow()) showEmpty();
-      else { confirmed = false; showNeedsConfirm(false); }
-    });
-  }
-
-  function boot() {
-    hideAddressParts();
-    var tries = 0;
-    function waitForGoogle() {
-      tries++;
-      if (window.google && google.maps && google.maps.places) {
-        initAutocomplete();
+    // Wait for Google Maps
+    var gmTries=0;
+    (function waitGM(){
+      gmTries++;
+      if(window.google && google.maps && google.maps.places) {
+        var ac = new google.maps.places.Autocomplete(input,{types:["address"]});
+        if(ac.setFields)ac.setFields(["address_component"]);
+        ac.addListener("place_changed",function(){
+          var place=ac.getPlace();
+          if(!place||!place.address_components)return;
+          var c=byQ("city"),st=byQ("state"),z=byQ("postal_code"),street="";
+          place.address_components.forEach(function(comp){
+            var type=comp.types&&comp.types[0];
+            if(type==="street_number")street=comp.short_name;
+            else if(type==="route")street=(street?street+" ":"")+comp.long_name;
+            else if(type==="locality"&&c)c.value=comp.long_name;
+            else if(type==="administrative_area_level_1"&&st)st.value=comp.short_name;
+            else if(type==="postal_code"&&z)z.value=comp.short_name;
+          });
+          if(street)input.value=street;
+          var ev=new Event("input",{bubbles:true});
+          input.dispatchEvent(ev);
+          if(c)c.dispatchEvent(ev);
+          if(st)st.dispatchEvent(ev);
+          if(z)z.dispatchEvent(ev);
+          showConfirmed();
+          setTimeout(function(){var p=document.querySelector(".pac-container");if(p)p.style.display="none";},300);
+        });
         return;
       }
-      if (tries < 60) setTimeout(waitForGoogle, 100);
-    }
-    waitForGoogle();
+      if(gmTries<80)setTimeout(waitGM,150);
+    })();
+
+    if(!input.value.trim())showEmpty();
+    else showNeedsConfirm(true);
+
+    input.addEventListener("focus",function(){tryEnable(input);if(!input.value.trim())showEmpty();else if(!confirmed)showNeedsConfirm(false);});
+    input.addEventListener("input",function(){tryEnable(input);if(!input.value.trim())showEmpty();else if(!confirmed)showNeedsConfirm(false);});
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", boot);
-  } else {
-    boot();
-  }
+  (function boot(){
+    hideAddressParts();
+    var t=0;
+    (function retry(){t++;if(byQ("address")){initAutocomplete();return;}if(t<80)setTimeout(retry,100);})();
+  })();
 })();
 
 
@@ -839,109 +431,58 @@
     if (document.getElementById("rw-details-hint-styles")) return;
     var css = document.createElement("style");
     css.id = "rw-details-hint-styles";
-    css.type = "text/css";
     css.innerHTML =
-      ".rw-details-hint{" +
-        "margin:0 0 12px 0;" +
-        "padding:12px 14px;" +
-        "border-radius:12px;" +
-        "font-size:14px;" +
-        "line-height:1.5;" +
-        "text-align:left;" +
-        "border:1px solid rgba(0,0,0,0.06);" +
-        "box-shadow:0 10px 24px rgba(0,0,0,0.06);" +
-        "transition:background 0.25s ease, color 0.25s ease, border-color 0.25s ease;" +
-      "}" +
-      ".rw-details-hint.neutral{" +
-        "background:rgba(59,130,246,0.08);" +
-        "color:#111111;" +
-        "border-color:rgba(30,58,138,0.10);" +
-      "}" +
-      ".rw-details-hint.green{" +
-        "background:rgba(0,128,0,0.08);" +
-        "color:#111111;" +
-        "border-color:rgba(31,90,42,0.12);" +
-      "}" +
-      ".rw-details-hint b{ font-weight:650; }" +
-      ".rw-notes-cta{" +
-        "display:none;" +
-        "margin:12px 0 0 0;" +
-        "padding:12px 14px;" +
-        "border-radius:12px;" +
-        "border:1px solid rgba(0,0,0,0.06);" +
-        "box-shadow:0 10px 24px rgba(0,0,0,0.06);" +
-        "background:rgba(0,128,0,0.08);" +
-        "color:#111111;" +
-        "text-align:left;" +
-      "}" +
+      ".rw-details-hint{margin:0 0 12px;padding:12px 14px;border-radius:12px;font-size:14px;line-height:1.5;text-align:left;border:1px solid rgba(0,0,0,.06);box-shadow:0 10px 24px rgba(0,0,0,.06);transition:background .25s,border-color .25s;}" +
+      ".rw-details-hint.neutral{background:rgba(59,130,246,.08);color:#111;border-color:rgba(30,58,138,.10);}" +
+      ".rw-details-hint.green{background:rgba(0,128,0,.08);color:#111;border-color:rgba(31,90,42,.12);}" +
+      ".rw-details-hint b{font-weight:650;}" +
+      ".rw-notes-cta{display:none;margin:12px 0 0;padding:12px 14px;border-radius:12px;border:1px solid rgba(0,0,0,.06);box-shadow:0 10px 24px rgba(0,0,0,.06);background:rgba(0,128,0,.08);color:#111;text-align:left;}" +
       ".rw-notes-cta .rw-cta-title{font-size:14px;font-weight:750;line-height:1.35;margin:0;}" +
-      ".rw-notes-cta .rw-cta-sub{margin-top:6px;font-size:13px;line-height:1.45;opacity:0.92;}" +
-      ".rw-notes-cta .rw-cta-divider{" +
-        "margin-top:10px;" +
-        "padding-top:10px;" +
-        "border-top:1px solid rgba(0,0,0,0.06);" +
-        "font-size:19px;" +
-        "font-weight:333;" +
-        "color:#1f5a2a;" +
-      "}";
+      ".rw-notes-cta .rw-cta-sub{margin-top:6px;font-size:13px;line-height:1.45;opacity:.92;}" +
+      ".rw-notes-cta .rw-cta-divider{margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,.06);font-size:19px;font-weight:333;color:#1f5a2a;}";
     document.head.appendChild(css);
-  }
-
-  function insertAbove(el, node) {
-    if (!el || !el.parentElement) return;
-    el.parentElement.insertBefore(node, el);
-  }
-
-  function insertAfter(el, node) {
-    if (!el || !el.parentElement) return;
-    if (el.nextSibling) el.parentElement.insertBefore(node, el.nextSibling);
-    else el.parentElement.appendChild(node);
-  }
-
-  function wordCount(v) {
-    var t = (v || "").replace(/^\s+|\s+$/g, "");
-    if (!t) return 0;
-    return t.split(/\s+/).filter(Boolean).length;
-  }
-
-  function isAddressConfirmed() {
-    var collapsed = document.querySelector(".rw-address-collapsed");
-    if (collapsed) return true;
-    var card = document.getElementById("rw-confirm-card");
-    if (card && card.className && card.className.indexOf("green") > -1) return true;
-    return false;
   }
 
   function initDetailsHint() {
     addStylesOnce();
-
-    // Use data-q to find the textarea regardless of random name attr
     var details = document.querySelector('[data-q="appointment_details"]') || document.querySelector("textarea");
     if (!details) return false;
 
-    var hint = document.getElementById("rw-details-hint");
-    if (!hint) {
-      hint = document.createElement("div");
+    if (!document.getElementById("rw-details-hint")) {
+      var hint = document.createElement("div");
       hint.id = "rw-details-hint";
       hint.className = "rw-details-hint neutral";
       hint.innerHTML = "\uD83D\uDCAC <b>Optional:</b> Add notes about your roof or gutter project to help your assigned rep arrive prepared for your appointment.";
-      insertAbove(details, hint);
+      details.parentElement.insertBefore(hint, details);
     }
 
-    var cta = document.getElementById("rw-notes-cta");
-    if (!cta) {
-      cta = document.createElement("div");
+    if (!document.getElementById("rw-notes-cta")) {
+      var cta = document.createElement("div");
       cta.id = "rw-notes-cta";
       cta.className = "rw-notes-cta";
       cta.innerHTML =
         '<div class="rw-cta-title">\u2705 Address confirmed. You\'re ready to book.</div>' +
-        '<div class="rw-cta-sub">Click <b>Book Your Pro Consultation</b> below to lock in your time. We\'ll reach out to confirm details and your anticipated arrival time within your selected 2-hour window.</div>' +
-        '<div class="rw-cta-divider">Next Step: Click the <b>Book Your Pro Consultation</b> button below \uD83D\uDC47</div>';
-      insertAfter(details, cta);
+        '<div class="rw-cta-sub">Click <b>Book Your Pro Consultation</b> below to lock in your time. We\'ll reach out to confirm details and your anticipated arrival time.</div>' +
+        '<div class="rw-cta-divider">Next Step: Click <b>Book Your Pro Consultation</b> below \uD83D\uDC47</div>';
+      if (details.nextSibling) details.parentElement.insertBefore(cta, details.nextSibling);
+      else details.parentElement.appendChild(cta);
     }
 
-    function syncUI() {
-      cta.style.display = isAddressConfirmed() ? "block" : "none";
+    var hint = document.getElementById("rw-details-hint");
+    var cta  = document.getElementById("rw-notes-cta");
+
+    function isAddrConfirmed() {
+      if (document.querySelector(".rw-address-collapsed")) return true;
+      var card = document.getElementById("rw-confirm-card");
+      return card && card.className.indexOf("green") > -1;
+    }
+    function wordCount(v) {
+      var t=(v||"").replace(/^\s+|\s+$/g,"");
+      return t?t.split(/\s+/).filter(Boolean).length:0;
+    }
+    function sync() {
+      if (cta) cta.style.display = isAddrConfirmed() ? "block" : "none";
+      if (!hint) return;
       if (wordCount(details.value) >= 2) {
         hint.className = "rw-details-hint green";
         hint.innerHTML = "\u2705 <b>Thank you!</b> This helps your assigned rep arrive prepared and makes your <b>Pro Consultation</b> more efficient.";
@@ -951,31 +492,14 @@
       }
     }
 
-    syncUI();
-    details.addEventListener("input", syncUI);
-
-    var tries = 0;
-    (function poll() {
-      tries++;
-      syncUI();
-      if (tries < 80) setTimeout(poll, 150);
-    })();
-
+    sync();
+    details.addEventListener("input", sync);
+    var p=0; (function poll(){p++;sync();if(p<80)setTimeout(poll,150);})();
     return true;
   }
 
-  function boot() {
-    var tries = 0;
-    (function retry() {
-      tries++;
-      if (initDetailsHint()) return;
-      if (tries < 60) setTimeout(retry, 100);
-    })();
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", boot);
-  } else {
-    boot();
-  }
+  (function boot(){
+    var t=0;
+    (function retry(){t++;if(initDetailsHint())return;if(t<60)setTimeout(retry,100);})();
+  })();
 })();
