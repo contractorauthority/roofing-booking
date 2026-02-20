@@ -58,7 +58,6 @@
       ".rw-continue-under{margin-top:10px;text-align:left;}" +
       ".rw-continue-under .rw-continue-btn{background:transparent;border:0;padding:0;cursor:pointer;font-size:13px;font-weight:750;color:#111;border-bottom:1px solid rgba(0,0,0,.22);}" +
       ".rw-contact-collapsed{display:none !important;}" +
-      /* ── ADDITION: Next/Back button styles ── */
       ".rw-nav-row{margin-top:14px;display:flex;gap:10px;align-items:center;}" +
       ".rw-btn-next{flex:1;padding:15px 18px;border-radius:12px;border:none;font-size:15px;font-weight:800;cursor:pointer;transition:background .2s,transform .1s;}" +
       ".rw-btn-next.on{background:#b43017;color:#fff;box-shadow:0 6px 16px rgba(180,48,23,.3);}" +
@@ -166,7 +165,7 @@
       bar.className = "rw-contact-status red";
       showCont(false);
       bar.innerHTML = "\uD83D\uDCDE <b>Please add your " + missing() +
-        'for your assigned rep can reach you.';
+        " so your rep can reach you.</b>";
     }
 
     function update() {
@@ -316,18 +315,13 @@
     if (!addrWrap) return;
     var cardWrap = findInsertWrap(input);
 
-    /* ── ADDITION: wrap address section in a hidden div ── */
     if (!document.getElementById("rw-addr-section")) {
       var section = document.createElement("div");
       section.id = "rw-addr-section";
       section.style.display = "block";
       section.style.marginBottom = "0";
-      // Insert section before cardWrap in the DOM
       cardWrap.parentNode.insertBefore(section, cardWrap);
-      // Move cardWrap into section
       section.appendChild(cardWrap);
-
-
     }
 
     ensureCard(cardWrap);
@@ -453,8 +447,20 @@
       ".rw-details-hint{margin:0 0 12px;padding:12px 14px;border-radius:12px;font-size:14px;line-height:1.5;text-align:left;border:1px solid rgba(0,0,0,.06);box-shadow:0 10px 24px rgba(0,0,0,.06);transition:background .25s,border-color .25s;}" +
       ".rw-details-hint.neutral{background:rgba(59,130,246,.08);color:#111;border-color:rgba(30,58,138,.10);}" +
       ".rw-details-hint.green{background:rgba(0,128,0,.08);color:#111;border-color:rgba(31,90,42,.12);}" +
-      ".rw-details-hint b{font-weight:650;}";
+      ".rw-details-hint b{font-weight:650;}" +
+      /* ── ADDITION: ready-to-book card ── */
+      ".rw-ready-card{display:none;margin:12px 0 0;padding:16px;border-radius:12px;text-align:center;background:rgba(0,128,0,.08);border:1px solid rgba(31,90,42,.14);box-shadow:0 10px 24px rgba(0,0,0,.06);}" +
+      ".rw-ready-title{font-size:18px;font-weight:800;color:#111;margin:0 0 6px;}" +
+      ".rw-ready-sub{font-size:13px;color:#333;line-height:1.5;margin:0 0 8px;opacity:.92;}" +
+      ".rw-ready-arrow{font-size:22px;margin:0;}";
     document.head.appendChild(css);
+  }
+
+  function bothGreen() {
+    var s1 = document.getElementById("rw-contact-status");
+    var s2 = document.getElementById("rw-confirm-card");
+    return s1 && s1.className.indexOf("green") > -1 &&
+           s2 && s2.className.indexOf("green") > -1;
   }
 
   function initDetailsHint() {
@@ -470,14 +476,29 @@
       details.parentElement.insertBefore(hint, details);
     }
 
+    /* ── ADDITION: inject ready-to-book card after textarea ── */
+    if (!document.getElementById("rw-ready-card")) {
+      var card = document.createElement("div");
+      card.id = "rw-ready-card";
+      card.className = "rw-ready-card";
+      card.innerHTML =
+        '<div class="rw-ready-title">\uD83C\uDF89 You\'re all set!</div>' +
+        '<div class="rw-ready-sub">We\'re excited to meet you. Your Roof Worx pro is ready to visit — just tap the button below to lock in your appointment.</div>' +
+        '<div class="rw-ready-arrow">\uD83D\uDC47</div>';
+      if (details.nextSibling) details.parentElement.insertBefore(card, details.nextSibling);
+      else details.parentElement.appendChild(card);
+    }
+
     var hint = document.getElementById("rw-details-hint");
+    var readyCard = document.getElementById("rw-ready-card");
 
     function wordCount(v) {
       var t=(v||"").replace(/^\s+|\s+$/g,"");
       return t?t.split(/\s+/).filter(Boolean).length:0;
     }
+
     function sync() {
-      if(!hint)return;
+      if(!hint) return;
       if(wordCount(details.value)>=2){
         hint.className="rw-details-hint green";
         hint.innerHTML="\u2705 <b>Thank you!</b> This helps your assigned rep arrive prepared and makes your <b>Pro Consultation</b> more efficient.";
@@ -485,6 +506,7 @@
         hint.className="rw-details-hint neutral";
         hint.innerHTML="\uD83D\uDCAC <b>Optional:</b> Add notes about your roof or gutter project to help your assigned rep arrive prepared for your appointment.";
       }
+      if (readyCard) readyCard.style.display = bothGreen() ? "block" : "none";
     }
 
     sync();
