@@ -57,7 +57,16 @@
       ".rw-saved{margin-top:10px;font-size:13px;font-weight:600;opacity:.95;}" +
       ".rw-continue-under{margin-top:10px;text-align:left;}" +
       ".rw-continue-under .rw-continue-btn{background:transparent;border:0;padding:0;cursor:pointer;font-size:13px;font-weight:750;color:#111;border-bottom:1px solid rgba(0,0,0,.22);}" +
-      ".rw-contact-collapsed{display:none !important;}";
+      ".rw-contact-collapsed{display:none !important;}" +
+      /* ── ADDITION: Next/Back button styles ── */
+      ".rw-nav-row{margin-top:14px;display:flex;gap:10px;align-items:center;}" +
+      ".rw-btn-next{flex:1;padding:15px 18px;border-radius:12px;border:none;font-size:15px;font-weight:800;cursor:pointer;transition:background .2s,transform .1s;}" +
+      ".rw-btn-next.on{background:#b43017;color:#fff;box-shadow:0 6px 16px rgba(180,48,23,.3);}" +
+      ".rw-btn-next.on:hover{background:#9a2912;transform:translateY(-1px);}" +
+      ".rw-btn-next.on:active{transform:translateY(0);}" +
+      ".rw-btn-next.off{background:#e8e8e8;color:#aaa;cursor:not-allowed;}" +
+      ".rw-btn-back{padding:15px 18px;border-radius:12px;border:2px solid rgba(0,0,0,.12);background:#fff;font-size:15px;font-weight:700;color:#555;cursor:pointer;transition:border-color .2s,color .2s;}" +
+      ".rw-btn-back:hover{border-color:rgba(0,0,0,.3);color:#111;}";
     document.head.appendChild(css);
   }
 
@@ -93,6 +102,19 @@
       else phoneWrap.parentNode.appendChild(cw);
     }
 
+    /* ── ADDITION: Next button after phone field ── */
+    if (!document.getElementById("rw-next-row") && phoneWrap) {
+      var nextRow = document.createElement("div");
+      nextRow.id = "rw-next-row";
+      nextRow.className = "rw-nav-row";
+      nextRow.innerHTML = '<button type="button" id="rw-next-btn" class="rw-btn-next off">Next: Confirm Address \u00a0\u2192</button>';
+      var contUnder = document.getElementById("rw-contact-continue-under");
+      // Insert after the continue-under div if it exists, otherwise after phoneWrap
+      var insertAfter = contUnder || phoneWrap;
+      if (insertAfter.nextSibling) insertAfter.parentNode.insertBefore(nextRow, insertAfter.nextSibling);
+      else insertAfter.parentNode.appendChild(nextRow);
+    }
+
     var bar = document.getElementById("rw-contact-status");
     if (!bar) {
       bar = document.createElement("div");
@@ -116,6 +138,34 @@
       if(!hasVal(last))m.push("last name");
       if(!phoneOk())m.push("phone number");
       return m.length===1?m[0]:m.length===2?m[0]+" and "+m[1]:m[0]+", "+m[1]+", and "+m[2];
+    }
+
+    /* ── ADDITION: wire Next button once DOM is ready ── */
+    function wireNextBtn() {
+      var btn = document.getElementById("rw-next-btn");
+      if (!btn || btn._wired) return;
+      btn._wired = true;
+      btn.onclick = function() {
+        if (!allOk()) return;
+        // Collapse contact fields, hide next row
+        collapse();
+        var nr = document.getElementById("rw-next-row");
+        if (nr) nr.style.display = "none";
+        renderGreen(false, false);
+        // Show address section
+        var addrSec = document.getElementById("rw-addr-section");
+        if (addrSec) {
+          addrSec.style.display = "block";
+          setTimeout(function(){ try{addrSec.scrollIntoView({behavior:"smooth",block:"start"});}catch(e){} }, 80);
+        }
+      };
+    }
+
+    function refreshNextBtn() {
+      var btn = document.getElementById("rw-next-btn");
+      if (!btn) return;
+      btn.className = "rw-btn-next " + (allOk() ? "on" : "off");
+      wireNextBtn();
     }
 
     function wireContinue() {
@@ -146,6 +196,11 @@
         if (savedTimer) clearTimeout(savedTimer);
         expandedByUser = true;
         expand();
+        // Show next row and hide address section when editing contact
+        var nr = document.getElementById("rw-next-row");
+        if (nr) nr.style.display = "flex";
+        var addrSec = document.getElementById("rw-addr-section");
+        if (addrSec) addrSec.style.display = "none";
         showCont(true);
         wireContinue();
         lastSnap = snap();
@@ -162,6 +217,7 @@
 
     function update() {
       var ok = allOk(), s = snap(), changed = s!==lastSnap;
+      refreshNextBtn();
       if (!ok) {
         if(savedTimer)clearTimeout(savedTimer);
         expandedByUser=false; expand(); renderRed(); lastSnap=s; return;
@@ -306,6 +362,55 @@
     var addrWrap = closestFieldWrap(input);
     if (!addrWrap) return;
     var cardWrap = findInsertWrap(input);
+
+    /* ── ADDITION: wrap address section in a hidden div ── */
+    if (!document.getElementById("rw-addr-section")) {
+      var section = document.createElement("div");
+      section.id = "rw-addr-section";
+      section.style.display = "none"; // hidden until Step 1 Next clicked
+      // Insert section before cardWrap in the DOM
+      cardWrap.parentNode.insertBefore(section, cardWrap);
+      // Move cardWrap into section
+      section.appendChild(cardWrap);
+
+      // ── ADDITION: Back button at top of section ──
+      var backRow = document.createElement("div");
+      backRow.className = "rw-nav-row";
+      backRow.style.marginBottom = "14px";
+      backRow.innerHTML = '<button type="button" class="rw-btn-back" id="rw-back-btn">\u2190 Back</button>';
+      section.insertBefore(backRow, section.firstChild);
+
+      // Wire Back button
+      setTimeout(function() {
+        var backBtn = document.getElementById("rw-back-btn");
+        if (!backBtn) return;
+        backBtn.onclick = function() {
+          // Hide address section
+          section.style.display = "none";
+          // Re-expand contact fields
+          var fields = ["first_name","last_name","phone"];
+          fields.forEach(function(q) {
+            var el = document.querySelector('[data-q="'+q+'"]') || document.querySelector('input[name="'+q+'"]');
+            if (!el) return;
+            var node = el, i = 0;
+            while (node && i < 12) {
+              var cls = typeof node.className === "string" ? node.className : "";
+              if (cls.indexOf("form-group") > -1 || cls.indexOf("field-container") > -1 || cls.indexOf("col-") > -1) {
+                node.classList.remove("rw-contact-collapsed"); break;
+              }
+              node = node.parentElement; i++;
+            }
+          });
+          // Show next button row
+          var nr = document.getElementById("rw-next-row");
+          if (nr) nr.style.display = "flex";
+          // Scroll to contact card
+          var bar = document.getElementById("rw-contact-status");
+          if (bar) setTimeout(function(){ try{bar.scrollIntoView({behavior:"smooth",block:"start"});}catch(e){} }, 80);
+        };
+      }, 300);
+    }
+
     ensureCard(cardWrap);
 
     var confirmed = false;
@@ -398,13 +503,12 @@
           showConfirmed();
           setTimeout(function(){var p=document.querySelector(".pac-container");if(p)p.style.display="none";},300);
         });
+        if(!input.value.trim())showEmpty();
+        else showNeedsConfirm(true);
         return;
       }
       if(gmTries<80)setTimeout(waitGM,150);
     })();
-
-    if(!input.value.trim())showEmpty();
-    else showNeedsConfirm(true);
 
     input.addEventListener("focus",function(){tryEnable(input);if(!input.value.trim())showEmpty();else if(!confirmed)showNeedsConfirm(false);});
     input.addEventListener("input",function(){tryEnable(input);if(!input.value.trim())showEmpty();else if(!confirmed)showNeedsConfirm(false);});
