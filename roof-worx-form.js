@@ -7,12 +7,17 @@
  *   <script src="https://contractorauthority.github.io/roofing-booking/roof-worx-form.js"></script>
  */
 
-/* ── Load Google Maps dynamically ── */
+/* ── Load Google Maps dynamically with callback ── */
 (function() {
-  if (window.google && window.google.maps) return;
+  if (window.google && window.google.maps && window.google.maps.places) return;
+  window.__rwGMReady = function() {
+    // Signal that Maps is ready - Script 2 polls for this
+    window.__rwGMLoaded = true;
+  };
   var s = document.createElement("script");
-  s.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyAM1jRtR068AC7A5zK90RukGayTsGYxhpg&libraries=places";
+  s.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyAM1jRtR068AC7A5zK90RukGayTsGYxhpg&libraries=places&callback=__rwGMReady";
   s.async = true;
+  s.defer = true;
   document.head.appendChild(s);
 })();
 
@@ -257,7 +262,19 @@
     document.head.appendChild(css);
   }
 
-  function tryEnable(el) {
+  // Find the wrapper at the form-field-wrapper level specifically for card insertion
+  function findInsertWrap(el) {
+    var node = el, i = 0;
+    while (node && i < 12) {
+      if (node.className && typeof node.className === "string") {
+        if (node.className.indexOf("form-field-wrapper") > -1) return node;
+      }
+      node = node.parentElement;
+      i++;
+    }
+    // fallback to closestFieldWrap
+    return closestFieldWrap(el);
+  }
     try{el.removeAttribute("readonly");}catch(e){}
     try{el.removeAttribute("disabled");}catch(e){}
   }
@@ -307,7 +324,8 @@
 
     var addrWrap = closestFieldWrap(input);
     if (!addrWrap) return;
-    ensureCard(addrWrap);
+    var cardInsertWrap = findInsertWrap(input);
+    ensureCard(cardInsertWrap);
 
     var confirmed = false;
 
@@ -375,11 +393,11 @@
       });
     }, 100);
 
-    // Wait for Google Maps
+    // Wait for Google Maps (loaded via callback flag or direct check)
     var gmTries=0;
     (function waitGM(){
       gmTries++;
-      if(window.google && google.maps && google.maps.places) {
+      if(window.__rwGMLoaded || (window.google && google.maps && google.maps.places)) {
         var ac = new google.maps.places.Autocomplete(input,{types:["address"]});
         if(ac.setFields)ac.setFields(["address_component"]);
         ac.addListener("place_changed",function(){
