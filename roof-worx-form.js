@@ -11,16 +11,7 @@
  * Block 2 (Step 2 section):
  *   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAM1jRtR068AC7A5zK90RukGayTsGYxhpg&libraries=places"></script>
  */
-console.log("=== RW DEBUG ===");
-console.log("first_name field:", document.querySelector('input[name="first_name"]'));
-console.log("appointment_details:", document.querySelector('textarea[name="appointment_details"]'));
-console.log("form-field-wrapper count:", document.querySelectorAll('.form-field-wrapper').length);
-var first = document.querySelector('input[name="first_name"]');
-if (first) {
-  console.log("p1:", first.parentElement.className);
-  console.log("p2:", first.parentElement.parentElement.className);
-  console.log("p3:", first.parentElement.parentElement.parentElement.className);
-}
+
 (function () {
   "use strict";
 
@@ -31,7 +22,9 @@ if (first) {
   function qsa(sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); }
 
   function fieldVal(name) {
-    var el = qs('input[name="' + name + '"]') || qs('textarea[name="' + name + '"]');
+    var el = qs('input[name="' + name + '"]') ||
+             qs('textarea[name="' + name + '"]') ||
+             qs('[data-q="' + name + '"]');
     return el ? el.value.trim() : "";
   }
 
@@ -236,7 +229,8 @@ if (first) {
   ───────────────────────────────────────── */
   function getFieldWrap(name) {
     var el = qs('input[name="' + name + '"]') ||
-             qs('textarea[name="' + name + '"]');
+             qs('textarea[name="' + name + '"]') ||
+             qs('[data-q="' + name + '"]');
     return el ? closestWrap(el) : null;
   }
 
