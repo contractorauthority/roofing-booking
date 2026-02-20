@@ -190,7 +190,7 @@
         '<div style="margin-top:10px;"><button type="button" class="rw-link-btn" id="rw-change-best-contact">\u2192 Change best contact</button>' +
         '<div class="rw-contact-helper">(person that will be at property)</div></div>' +
         (saved ? '<div class="rw-saved">\u2705 Contact details updated.</div>' : "") +
-        (editing ? "" : '<div class="rw-next-step">Next: confirm your property address below. \uD83D\uDC47</div>');
+        (editing ? "" : "");
       var btn = document.getElementById("rw-change-best-contact");
       if (btn) btn.onclick = function() {
         if (savedTimer) clearTimeout(savedTimer);
@@ -212,7 +212,7 @@
       bar.className = "rw-contact-status red";
       showCont(false);
       bar.innerHTML = "\uD83D\uDCDE <b>So your rep can reach you:</b> Please add your " + missing() +
-        '.<div class="rw-next-step">Next: confirm your property address below. \uD83D\uDC47</div>';
+        '.';
     }
 
     function update() {
@@ -534,11 +534,7 @@
       ".rw-details-hint{margin:0 0 12px;padding:12px 14px;border-radius:12px;font-size:14px;line-height:1.5;text-align:left;border:1px solid rgba(0,0,0,.06);box-shadow:0 10px 24px rgba(0,0,0,.06);transition:background .25s,border-color .25s;}" +
       ".rw-details-hint.neutral{background:rgba(59,130,246,.08);color:#111;border-color:rgba(30,58,138,.10);}" +
       ".rw-details-hint.green{background:rgba(0,128,0,.08);color:#111;border-color:rgba(31,90,42,.12);}" +
-      ".rw-details-hint b{font-weight:650;}" +
-      ".rw-notes-cta{display:none;margin:12px 0 0;padding:12px 14px;border-radius:12px;border:1px solid rgba(0,0,0,.06);box-shadow:0 10px 24px rgba(0,0,0,.06);background:rgba(0,128,0,.08);color:#111;text-align:left;}" +
-      ".rw-notes-cta .rw-cta-title{font-size:14px;font-weight:750;line-height:1.35;margin:0;}" +
-      ".rw-notes-cta .rw-cta-sub{margin-top:6px;font-size:13px;line-height:1.45;opacity:.92;}" +
-      ".rw-notes-cta .rw-cta-divider{margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,.06);font-size:19px;font-weight:333;color:#1f5a2a;}";
+      ".rw-details-hint b{font-weight:650;}";
     document.head.appendChild(css);
   }
 
@@ -555,32 +551,13 @@
       details.parentElement.insertBefore(hint, details);
     }
 
-    if (!document.getElementById("rw-notes-cta")) {
-      var cta = document.createElement("div");
-      cta.id = "rw-notes-cta";
-      cta.className = "rw-notes-cta";
-      cta.innerHTML =
-        '<div class="rw-cta-title">\u2705 Address confirmed. You\'re ready to book.</div>' +
-        '<div class="rw-cta-sub">Click <b>Book Your Pro Consultation</b> below to lock in your time. We\'ll reach out to confirm details and your anticipated arrival time.</div>' +
-        '<div class="rw-cta-divider">Next Step: Click <b>Book Your Pro Consultation</b> below \uD83D\uDC47</div>';
-      if (details.nextSibling) details.parentElement.insertBefore(cta, details.nextSibling);
-      else details.parentElement.appendChild(cta);
-    }
-
     var hint = document.getElementById("rw-details-hint");
-    var cta  = document.getElementById("rw-notes-cta");
 
-    function isAddrConfirmed() {
-      if (document.querySelector(".rw-address-collapsed")) return true;
-      var card = document.getElementById("rw-confirm-card");
-      return card && card.className.indexOf("green") > -1;
-    }
     function wordCount(v) {
       var t=(v||"").replace(/^\s+|\s+$/g,"");
       return t?t.split(/\s+/).filter(Boolean).length:0;
     }
     function sync() {
-      if(cta)cta.style.display=isAddrConfirmed()?"block":"none";
       if(!hint)return;
       if(wordCount(details.value)>=2){
         hint.className="rw-details-hint green";
