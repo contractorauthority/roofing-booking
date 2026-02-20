@@ -53,7 +53,8 @@
     var node = el, depth = 0;
     while (node && depth < 12) {
       var cls = typeof node.className === "string" ? node.className : "";
-      if (cls.indexOf("form-group") > -1 ||
+      if (cls.indexOf("form-field-wrapper") > -1 ||
+          cls.indexOf("form-group") > -1 ||
           cls.indexOf("field-container") > -1 ||
           cls.indexOf("col-") > -1) return node;
       node = node.parentElement;
