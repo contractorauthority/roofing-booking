@@ -1,512 +1,500 @@
 /**
- * Roof Worx — 3-Step Form Wizard
- * ================================
- * Step 1: Contact Info → Next
- * Step 2: Property Address (Google Maps) → Back | Next
- * Step 3: Notes (optional) → Back | Book
+ * Roof Worx — Combined Form Enhancement
+ * =======================================
+ * Script 1: Contact Status Card
+ * Script 2: Google Places Address Autocomplete
+ * Script 3: Appointment Details Hint
  *
  * HL Custom JS/HTML — ONE block, ONE line:
  *   <script src="https://contractorauthority.github.io/roofing-booking/roof-worx-form.js"></script>
  */
 
+/* ── Load Google Maps dynamically with callback ── */
+(function() {
+  if (window.google && window.google.maps && window.google.maps.places) return;
+  window.__rwGMReady = function() { window.__rwGMLoaded = true; };
+  var s = document.createElement("script");
+  s.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyAM1jRtR068AC7A5zK90RukGayTsGYxhpg&libraries=places&callback=__rwGMReady";
+  s.async = true;
+  s.defer = true;
+  document.head.appendChild(s);
+})();
+
+
+/* ═══════════════════════════════════════════════════════
+   SCRIPT 1 — CONTACT STATUS CARD
+═══════════════════════════════════════════════════════ */
 (function () {
-  "use strict";
-
-  /* ─────────────────────────────────────────
-     GOOGLE MAPS LOADER
-  ───────────────────────────────────────── */
-  if (!window.google || !window.google.maps) {
-    window.__rwGMReady = function () { window.__rwGMLoaded = true; };
-    var gms = document.createElement("script");
-    gms.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyAM1jRtR068AC7A5zK90RukGayTsGYxhpg&libraries=places&callback=__rwGMReady";
-    gms.async = true;
-    gms.defer = true;
-    document.head.appendChild(gms);
-  }
-
-  /* ─────────────────────────────────────────
-     UTILITIES
-  ───────────────────────────────────────── */
-  function byQ(q) {
-    return document.querySelector('[data-q="' + q + '"]') ||
-           document.querySelector('input[name="' + q + '"]') ||
-           document.querySelector('textarea[name="' + q + '"]');
-  }
-  function val(el) { return el && el.value ? el.value.replace(/^\s+|\s+$/g, "") : ""; }
-  function hasVal(el) { return val(el).length > 0; }
-  function digits(s) { return (s || "").replace(/\D+/g, ""); }
-  function fmtPhone(raw) {
-    var d = digits(raw);
-    if (d.length === 11 && d[0] === "1") d = d.substring(1);
-    if (d.length < 10) return raw || "";
-    return "(" + d.substring(0, 3) + ") " + d.substring(3, 6) + "-" + d.substring(6, 10);
-  }
-  function phoneOk(el) {
-    var d = digits(val(el));
-    if (d.length === 11 && d[0] === "1") d = d.substring(1);
-    return d.length >= 10;
-  }
-  function fireInput(el) {
-    try { el.dispatchEvent(new Event("input", { bubbles: true })); } catch(e) {}
-  }
-  function tryEnable(el) {
-    try { el.removeAttribute("readonly"); } catch(e) {}
-    try { el.removeAttribute("disabled"); } catch(e) {}
-  }
-  function closestWrap(el) {
+  function closestFieldWrap(el) {
     var node = el, i = 0;
     while (node && i < 12) {
-      var cls = typeof node.className === "string" ? node.className : "";
-      if (cls.indexOf("form-group") > -1 ||
-          cls.indexOf("field-container") > -1 ||
-          cls.indexOf("col-") > -1) return node;
+      if (node.className && typeof node.className === "string") {
+        if (node.className.indexOf("form-group") > -1 ||
+            node.className.indexOf("field-container") > -1 ||
+            node.className.indexOf("col-") > -1) return node;
+      }
       node = node.parentElement;
       i++;
     }
     return el && el.parentElement ? el.parentElement : el;
   }
-  function closestFfw(el) {
-    var node = el, i = 0;
-    while (node && i < 14) {
-      var cls = typeof node.className === "string" ? node.className : "";
-      if (cls.indexOf("form-field-wrapper") > -1) return node;
-      node = node.parentElement;
-      i++;
-    }
-    return closestWrap(el);
-  }
 
-  /* ─────────────────────────────────────────
-     STYLES
-  ───────────────────────────────────────── */
-  function injectStyles() {
-    if (document.getElementById("rw-wizard-styles")) return;
+  function addStylesOnce() {
+    if (document.getElementById("rw-contact-status-styles")) return;
     var css = document.createElement("style");
-    css.id = "rw-wizard-styles";
-    css.innerHTML = [
-      /* Wizard shell */
-      "#rw-wizard{font-family:inherit;max-width:100%;}",
-
-      /* Step bar */
-      ".rw-steps{display:flex;align-items:center;margin:0 0 22px;padding:0;}",
-      ".rw-step-item{display:flex;align-items:center;flex:1;}",
-      ".rw-step-item:last-child{flex:0 0 auto;}",
-      ".rw-step-dot{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0;transition:all .3s;}",
-      ".rw-step-dot.inactive{background:#f0f0f0;color:#bbb;border:2px solid #e0e0e0;}",
-      ".rw-step-dot.active{background:#b43017;color:#fff;border:2px solid #b43017;box-shadow:0 4px 12px rgba(180,48,23,.3);}",
-      ".rw-step-dot.done{background:rgba(0,128,0,.12);color:#1a6b2a;border:2px solid rgba(31,90,42,.25);}",
-      ".rw-step-label{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;margin-left:6px;transition:color .3s;white-space:nowrap;}",
-      ".rw-step-label.inactive{color:#c0c0c0;}",
-      ".rw-step-label.active{color:#b43017;}",
-      ".rw-step-label.done{color:#1a6b2a;}",
-      ".rw-step-line{flex:1;height:2px;margin:0 8px;border-radius:2px;transition:background .3s;}",
-      ".rw-step-line.inactive{background:#e8e8e8;}",
-      ".rw-step-line.done{background:rgba(31,90,42,.2);}",
-
-      /* Panels */
-      ".rw-panel{display:none;}",
-      ".rw-panel.active{display:block;}",
-
-      /* Cards */
-      ".rw-card{margin:0 0 16px;padding:16px 18px;border-radius:14px;font-size:14px;line-height:1.55;border:1px solid rgba(0,0,0,.06);box-shadow:0 6px 18px rgba(0,0,0,.07);transition:background .25s,border-color .25s;}",
-      ".rw-card.red{background:rgba(180,48,23,.06);border-color:rgba(180,48,23,.14);color:#111;}",
-      ".rw-card.green{background:rgba(0,128,0,.07);border-color:rgba(31,90,42,.15);color:#111;}",
-      ".rw-card.blue{background:rgba(59,130,246,.07);border-color:rgba(30,58,138,.10);color:#111;}",
-      ".rw-card-title{font-size:17px;font-weight:800;margin:0 0 5px;line-height:1.25;color:#111;}",
-      ".rw-card-sub{font-size:13px;line-height:1.5;opacity:.8;margin:0;}",
-
-      /* Address pill */
-      ".rw-addr-pill{margin:10px 0 0;padding:10px 14px;border-radius:10px;background:#fff;border:1px solid rgba(0,0,0,.10);font-weight:650;font-size:14px;color:#111;}",
-      ".rw-addr-change{display:inline-flex;align-items:center;margin-top:10px;font-size:13px;font-weight:700;color:#555;background:none;border:none;border-bottom:1px solid rgba(0,0,0,.2);padding:0;cursor:pointer;transition:color .2s,border-color .2s;}",
-      ".rw-addr-change:hover{color:#111;border-bottom-color:rgba(0,0,0,.45);}",
-
-      /* Address input states */
-      "[data-q='address']{background:#fff !important;color:#111 !important;}",
-      ".rw-addr-empty{border:2px solid rgba(0,128,0,.4) !important;border-radius:10px !important;}",
-      ".rw-addr-pulse{animation:rwPulse 1.3s ease-in-out infinite;border:2px solid rgba(180,48,23,.5) !important;border-radius:10px !important;}",
-      "@keyframes rwPulse{0%{box-shadow:0 0 0 0 rgba(180,48,23,.25);}70%{box-shadow:0 0 0 8px rgba(180,48,23,0);}100%{box-shadow:0 0 0 0 rgba(180,48,23,0);}}",
-
-      /* Notes hint */
-      ".rw-hint{margin:0 0 14px;padding:13px 16px;border-radius:12px;font-size:14px;line-height:1.5;border:1px solid rgba(0,0,0,.06);transition:background .25s,border-color .25s;}",
-      ".rw-hint.blue{background:rgba(59,130,246,.07);border-color:rgba(30,58,138,.10);color:#111;}",
-      ".rw-hint.green{background:rgba(0,128,0,.08);border-color:rgba(31,90,42,.12);color:#111;}",
-
-      /* Nav buttons */
-      ".rw-nav{display:flex;gap:10px;margin-top:20px;align-items:stretch;}",
-      ".rw-btn-next{flex:1;padding:16px 20px;border-radius:14px;border:none;font-size:15px;font-weight:800;cursor:pointer;transition:background .2s,opacity .15s,transform .1s,box-shadow .2s;letter-spacing:.1px;line-height:1;}",
-      ".rw-btn-next.enabled{background:#b43017;color:#fff;box-shadow:0 6px 18px rgba(180,48,23,.28);}",
-      ".rw-btn-next.enabled:hover{background:#9a2912;box-shadow:0 8px 22px rgba(180,48,23,.36);transform:translateY(-1px);}",
-      ".rw-btn-next.enabled:active{transform:translateY(0);}",
-      ".rw-btn-next.disabled{background:#ebebeb;color:#b0b0b0;cursor:not-allowed;box-shadow:none;}",
-      ".rw-btn-back{flex:0 0 auto;padding:16px 20px;border-radius:14px;border:2px solid rgba(0,0,0,.12);background:#fff;font-size:15px;font-weight:700;color:#666;cursor:pointer;transition:border-color .2s,color .2s,background .2s;line-height:1;}",
-      ".rw-btn-back:hover{border-color:rgba(0,0,0,.28);color:#111;background:#fafafa;}",
-    ].join("");
+    css.id = "rw-contact-status-styles";
+    css.innerHTML =
+      ".rw-contact-status{margin:0 0 12px;padding:14px 16px;border-radius:12px;font-size:14px;line-height:1.55;text-align:left;border:1px solid rgba(0,0,0,0.06);box-shadow:0 10px 24px rgba(0,0,0,0.06);transition:background .25s,border-color .25s;}" +
+      ".rw-contact-status.green{background:rgba(0,128,0,0.08);color:#111;border-color:rgba(31,90,42,0.12);}" +
+      ".rw-contact-status.red{background:rgba(180,48,23,0.07);color:#7a2717;border-color:rgba(180,48,23,0.12);}" +
+      ".rw-contact-title{font-size:27px;line-height:1.25;font-weight:750;margin:0 0 8px;letter-spacing:-.2px;}" +
+      ".rw-contact-body{font-size:14px;line-height:1.6;margin:0;}" +
+      ".rw-link-btn{background:transparent;border:0;padding:0;color:inherit;cursor:pointer;font-weight:700;border-bottom:1px solid rgba(0,0,0,.22);}" +
+      ".rw-link-btn:hover{border-bottom-color:rgba(0,0,0,.45);}" +
+      ".rw-contact-helper{opacity:.82;font-size:13px;line-height:1.35;margin-top:2px;}" +
+      ".rw-next-step{margin-top:12px;padding-top:12px;border-top:1px solid rgba(0,0,0,.06);font-size:13px;font-weight:500;opacity:.92;}" +
+      ".rw-contact-status.green .rw-next-step{color:#1f5a2a;}" +
+      ".rw-saved{margin-top:10px;font-size:13px;font-weight:600;opacity:.95;}" +
+      ".rw-continue-under{margin-top:10px;text-align:left;}" +
+      ".rw-continue-under .rw-continue-btn{background:transparent;border:0;padding:0;cursor:pointer;font-size:13px;font-weight:750;color:#111;border-bottom:1px solid rgba(0,0,0,.22);}" +
+      ".rw-contact-collapsed{display:none !important;}";
     document.head.appendChild(css);
   }
 
-  /* ─────────────────────────────────────────
-     STEP BAR UPDATER
-  ───────────────────────────────────────── */
-  function setStepBar(current) {
-    for (var i = 1; i <= 3; i++) {
-      var dot  = document.getElementById("rw-dot-" + i);
-      var lbl  = document.getElementById("rw-lbl-" + i);
-      var line = document.getElementById("rw-line-" + i);
-      if (!dot) continue;
-      if (i < current) {
-        dot.className = "rw-step-dot done"; dot.innerHTML = "&#10003;";
-        if (lbl) lbl.className = "rw-step-label done";
-        if (line) line.className = "rw-step-line done";
-      } else if (i === current) {
-        dot.className = "rw-step-dot active"; dot.textContent = String(i);
-        if (lbl) lbl.className = "rw-step-label active";
-        if (line) line.className = "rw-step-line inactive";
-      } else {
-        dot.className = "rw-step-dot inactive"; dot.textContent = String(i);
-        if (lbl) lbl.className = "rw-step-label inactive";
-        if (line) line.className = "rw-step-line inactive";
-      }
-    }
+  function byQ(q) {
+    return document.querySelector('[data-q="' + q + '"]') || document.querySelector('input[name="' + q + '"]');
+  }
+  function val(el) { return el && el.value ? el.value.replace(/^\s+|\s+$/g,"") : ""; }
+  function hasVal(el) { return val(el).length > 0; }
+  function digits(s) { return (s||"").replace(/\D+/g,""); }
+  function fmtPhone(raw) {
+    var d = digits(raw);
+    if (d.length===11 && d[0]==="1") d=d.substring(1);
+    if (d.length<10) return raw||"";
+    return "("+d.substring(0,3)+") "+d.substring(3,6)+"-"+d.substring(6,10);
   }
 
-  /* ─────────────────────────────────────────
-     MAIN INIT
-  ───────────────────────────────────────── */
-  function init() {
-    var fFirst = byQ("first_name");
-    var fLast  = byQ("last_name");
-    var fPhone = byQ("phone");
-    var fAddr  = byQ("address");
-    var fCity  = byQ("city");
-    var fState = byQ("state");
-    var fZip   = byQ("postal_code");
-    var fNotes = byQ("appointment_details") || document.querySelector("textarea");
+  function initContactStatus() {
+    var first = byQ("first_name"), last = byQ("last_name"), phone = byQ("phone");
+    if (!first||!last||!phone) return false;
+    addStylesOnce();
 
-    if (!fFirst || !fLast || !fPhone || !fAddr) return false;
+    var firstWrap = closestFieldWrap(first);
+    var lastWrap  = closestFieldWrap(last);
+    var phoneWrap = closestFieldWrap(phone);
 
-    injectStyles();
-
-    /* ── Find field wrappers ── */
-    var wFirst = closestWrap(fFirst);
-    var wLast  = closestWrap(fLast);
-    var wPhone = closestWrap(fPhone);
-    var wAddr  = closestFfw(fAddr);
-    var wNotes = fNotes ? closestWrap(fNotes) : null;
-
-    /* ── Hide city/state/zip ── */
-    [fCity, fState, fZip].forEach(function(f) {
-      if (!f) return;
-      var w = closestWrap(f);
-      if (w) w.style.display = "none";
-    });
-
-    /* ── Find HL submit button wrapper ── */
-    var hlSubmitWrap = null;
-    var hlSubmit = document.querySelector('button[type="submit"]');
-    if (hlSubmit) {
-      hlSubmitWrap = closestWrap(hlSubmit);
+    if (!document.getElementById("rw-contact-continue-under") && phoneWrap) {
+      var cw = document.createElement("div");
+      cw.id = "rw-contact-continue-under";
+      cw.className = "rw-continue-under";
+      cw.style.display = "none";
+      cw.innerHTML = '<button type="button" class="rw-continue-btn" id="rw-contact-continue-btn">Update the contact info <span style="white-space:nowrap;">\u2192 Then (click here) continue to next step\uD83D\uDC4D</span></button>';
+      if (phoneWrap.nextSibling) phoneWrap.parentNode.insertBefore(cw, phoneWrap.nextSibling);
+      else phoneWrap.parentNode.appendChild(cw);
     }
 
-    /* ── Build wizard container ── */
-    var wizard = document.createElement("div");
-    wizard.id = "rw-wizard";
-
-    /* Step bar */
-    var stepBar = document.createElement("div");
-    stepBar.className = "rw-steps";
-    stepBar.innerHTML =
-      '<div class="rw-step-item">' +
-        '<div class="rw-step-dot active" id="rw-dot-1">1</div>' +
-        '<span class="rw-step-label active" id="rw-lbl-1">Contact</span>' +
-        '<div class="rw-step-line inactive" id="rw-line-1"></div>' +
-      '</div>' +
-      '<div class="rw-step-item">' +
-        '<div class="rw-step-dot inactive" id="rw-dot-2">2</div>' +
-        '<span class="rw-step-label inactive" id="rw-lbl-2">Address</span>' +
-        '<div class="rw-step-line inactive" id="rw-line-2"></div>' +
-      '</div>' +
-      '<div class="rw-step-item">' +
-        '<div class="rw-step-dot inactive" id="rw-dot-3">3</div>' +
-        '<span class="rw-step-label inactive" id="rw-lbl-3">Notes</span>' +
-      '</div>';
-    wizard.appendChild(stepBar);
-
-    /* Panels */
-    var p1 = document.createElement("div"); p1.id = "rw-panel-1"; p1.className = "rw-panel active";
-    var p2 = document.createElement("div"); p2.id = "rw-panel-2"; p2.className = "rw-panel";
-    var p3 = document.createElement("div"); p3.id = "rw-panel-3"; p3.className = "rw-panel";
-    wizard.appendChild(p1);
-    wizard.appendChild(p2);
-    wizard.appendChild(p3);
-
-    /* Insert wizard before first field wrapper */
-    var anchor = closestFfw(fFirst) || wFirst;
-    anchor.parentNode.insertBefore(wizard, anchor);
-
-    /* Move HL fields into panels */
-    p1.appendChild(wFirst || fFirst);
-    p1.appendChild(wLast  || fLast);
-    p1.appendChild(wPhone || fPhone);
-    p2.appendChild(wAddr  || fAddr);
-    if (wNotes)      p3.appendChild(wNotes);
-    if (hlSubmitWrap) p3.appendChild(hlSubmitWrap);
-
-    /* ── Step 1: card + next ── */
-    var s1Card = document.createElement("div");
-    s1Card.id = "rw-s1-card";
-    s1Card.className = "rw-card red";
-    p1.insertBefore(s1Card, p1.firstChild);
-
-    var s1Nav = document.createElement("div");
-    s1Nav.className = "rw-nav";
-    s1Nav.innerHTML = '<button type="button" id="rw-next-1" class="rw-btn-next disabled">Next: Confirm Address &nbsp;\u2192</button>';
-    p1.appendChild(s1Nav);
-
-    /* ── Step 2: card + back/next ── */
-    var s2Card = document.createElement("div");
-    s2Card.id = "rw-s2-card";
-    s2Card.className = "rw-card red";
-    p2.insertBefore(s2Card, p2.firstChild);
-
-    var s2Nav = document.createElement("div");
-    s2Nav.className = "rw-nav";
-    s2Nav.innerHTML =
-      '<button type="button" id="rw-back-2" class="rw-btn-back">\u2190 Back</button>' +
-      '<button type="button" id="rw-next-2" class="rw-btn-next disabled">Next: Add Notes &nbsp;\u2192</button>';
-    p2.appendChild(s2Nav);
-
-    /* ── Step 3: addr summary + hint + back ── */
-    var s3Addr = document.createElement("div");
-    s3Addr.id = "rw-s3-addr";
-    s3Addr.className = "rw-card green";
-    s3Addr.style.display = "none";
-
-    var s3Hint = document.createElement("div");
-    s3Hint.id = "rw-s3-hint";
-    s3Hint.className = "rw-hint blue";
-    s3Hint.innerHTML = "\uD83D\uDCAC <b>Optional:</b> Add notes about your roof or project to help your rep arrive prepared.";
-
-    var s3Nav = document.createElement("div");
-    s3Nav.className = "rw-nav";
-    s3Nav.innerHTML = '<button type="button" id="rw-back-3" class="rw-btn-back">\u2190 Back</button>';
-
-    // Insert at top of p3 (before notes and submit)
-    p3.insertBefore(s3Hint, p3.firstChild);
-    p3.insertBefore(s3Addr, p3.firstChild);
-    // Insert back button before submit wrap
-    if (hlSubmitWrap) p3.insertBefore(s3Nav, hlSubmitWrap);
-    else p3.appendChild(s3Nav);
-
-    /* ─────────────────────────────────────────
-       NAVIGATION LOGIC
-    ───────────────────────────────────────── */
-    var addrConfirmed = false;
-    var addrFullText  = "";
-
-    function showPanel(n) {
-      p1.className = "rw-panel" + (n === 1 ? " active" : "");
-      p2.className = "rw-panel" + (n === 2 ? " active" : "");
-      p3.className = "rw-panel" + (n === 3 ? " active" : "");
-      setStepBar(n);
-      setTimeout(function() {
-        try { wizard.scrollIntoView({ behavior: "smooth", block: "start" }); } catch(e) {}
-      }, 60);
+    var bar = document.getElementById("rw-contact-status");
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.id = "rw-contact-status";
+      bar.className = "rw-contact-status red";
+      if (!(firstWrap||first).parentNode) return false;
+      (firstWrap||first).parentNode.insertBefore(bar, firstWrap||first);
     }
 
-    /* Next 1 */
-    function refreshNext1() {
-      var ok = hasVal(fFirst) && hasVal(fLast) && phoneOk(fPhone);
-      document.getElementById("rw-next-1").className = "rw-btn-next " + (ok ? "enabled" : "disabled");
-    }
-    document.getElementById("rw-next-1").onclick = function() {
-      if (!hasVal(fFirst) || !hasVal(fLast) || !phoneOk(fPhone)) return;
-      renderS1Green();
-      showPanel(2);
-    };
+    var expandedByUser = false, lastSnap = "", savedTimer = null;
 
-    /* Back 2 */
-    document.getElementById("rw-back-2").onclick = function() {
-      showPanel(1);
-    };
-
-    /* Next 2 */
-    function refreshNext2() {
-      document.getElementById("rw-next-2").className = "rw-btn-next " + (addrConfirmed ? "enabled" : "disabled");
-    }
-    document.getElementById("rw-next-2").onclick = function() {
-      if (!addrConfirmed) return;
-      renderS3Addr();
-      showPanel(3);
-    };
-
-    /* Back 3 */
-    document.getElementById("rw-back-3").onclick = function() {
-      showPanel(2);
-    };
-
-    /* ─────────────────────────────────────────
-       STEP 1 — CONTACT CARD
-    ───────────────────────────────────────── */
-    function renderS1Red() {
-      var m = [];
-      if (!hasVal(fFirst))  m.push("first name");
-      if (!hasVal(fLast))   m.push("last name");
-      if (!phoneOk(fPhone)) m.push("phone number");
-      var txt = m.length === 1 ? m[0] : m.length === 2 ? m[0] + " and " + m[1] : m[0] + ", " + m[1] + ", and " + m[2];
-      s1Card.className = "rw-card red";
-      s1Card.innerHTML =
-        '<div class="rw-card-title">\uD83D\uDCDE Your contact info</div>' +
-        '<div class="rw-card-sub">Please add your ' + txt + ' so your rep can reach you on the day of your appointment.</div>';
+    function collapse() { [firstWrap,lastWrap,phoneWrap].forEach(function(w){if(w)w.classList.add("rw-contact-collapsed");}); }
+    function expand()   { [firstWrap,lastWrap,phoneWrap].forEach(function(w){if(w)w.classList.remove("rw-contact-collapsed");}); }
+    function showCont(v) { var el=document.getElementById("rw-contact-continue-under"); if(el)el.style.display=v?"block":"none"; }
+    function phoneOk() { var d=digits(val(phone)); if(d.length===11&&d[0]==="1")d=d.substring(1); return d.length>=10; }
+    function allOk() { return hasVal(first)&&hasVal(last)&&phoneOk(); }
+    function snap() { return val(first)+"|"+val(last)+"|"+digits(val(phone)); }
+    function missing() {
+      var m=[];
+      if(!hasVal(first))m.push("first name");
+      if(!hasVal(last))m.push("last name");
+      if(!phoneOk())m.push("phone number");
+      return m.length===1?m[0]:m.length===2?m[0]+" and "+m[1]:m[0]+", "+m[1]+", and "+m[2];
     }
 
-    function renderS1Green() {
-      s1Card.className = "rw-card green";
-      s1Card.innerHTML =
-        '<div class="rw-card-title">\uD83D\uDC4B Hi, ' + val(fFirst) + '!</div>' +
-        '<div class="rw-card-sub">Your Roof Worx rep will call or text <b>' + fmtPhone(val(fPhone)) + '</b> the morning of your appointment to confirm their arrival window.</div>';
-    }
-
-    function updateS1() {
-      var ok = hasVal(fFirst) && hasVal(fLast) && phoneOk(fPhone);
-      if (ok) renderS1Green(); else renderS1Red();
-      refreshNext1();
-    }
-
-    fFirst.addEventListener("input", updateS1);
-    fLast.addEventListener("input",  updateS1);
-    fPhone.addEventListener("input", updateS1);
-    updateS1();
-
-    /* ─────────────────────────────────────────
-       STEP 2 — ADDRESS + GOOGLE MAPS
-    ───────────────────────────────────────── */
-    function renderS2Empty() {
-      addrConfirmed = false;
-      fAddr.classList.remove("rw-addr-pulse");
-      fAddr.classList.add("rw-addr-empty");
-      s2Card.className = "rw-card red";
-      s2Card.innerHTML =
-        '<div class="rw-card-title">\uD83C\uDFE0 Property address</div>' +
-        '<div class="rw-card-sub">Start typing your address and select the correct property from the Google Maps dropdown.</div>';
-      refreshNext2();
-    }
-
-    function renderS2NeedsConfirm() {
-      addrConfirmed = false;
-      fAddr.classList.remove("rw-addr-empty");
-      fAddr.classList.add("rw-addr-pulse");
-      s2Card.className = "rw-card red";
-      s2Card.innerHTML =
-        '<div class="rw-card-title">\uD83D\uDCCD Select your property</div>' +
-        '<div class="rw-card-sub">Choose the correct address from the Google Maps dropdown to confirm it.</div>';
-      refreshNext2();
-    }
-
-    function renderS2Confirmed() {
-      addrConfirmed = true;
-      fAddr.classList.remove("rw-addr-pulse", "rw-addr-empty");
-      var street = fAddr.value.trim();
-      var parts = [street];
-      if (fCity  && fCity.value.trim())  parts.push(fCity.value.trim());
-      if (fState && fState.value.trim()) parts.push(fState.value.trim());
-      if (fZip   && fZip.value.trim())   parts.push(fZip.value.trim());
-      addrFullText = parts.filter(Boolean).join(", ");
-      s2Card.className = "rw-card green";
-      s2Card.innerHTML =
-        '<div class="rw-card-title">\uD83D\uDC4D Address confirmed</div>' +
-        '<div class="rw-addr-pill">' + addrFullText + '</div>';
-      refreshNext2();
-    }
-
-    function renderS3Addr() {
-      s3Addr.style.display = "block";
-      s3Addr.innerHTML =
-        '<div class="rw-card-title">\uD83D\uDCCD ' + addrFullText + '</div>' +
-        '<div class="rw-card-sub" style="margin-top:4px;">Your Roof Worx pro will know exactly where to go.</div>' +
-        '<button type="button" class="rw-addr-change" id="rw-s3-change">\u2190&nbsp; Change address</button>';
-      var btn = document.getElementById("rw-s3-change");
-      if (btn) btn.onclick = function() {
-        s3Addr.style.display = "none";
-        showPanel(2);
+    function wireContinue() {
+      var btn = document.getElementById("rw-contact-continue-btn");
+      if (!btn) return;
+      btn.onclick = function() {
+        if (!allOk()) return;
+        if (savedTimer) clearTimeout(savedTimer);
+        expandedByUser = false;
+        showCont(false);
+        collapse();
+        renderGreen(false, false);
       };
     }
 
-    tryEnable(fAddr);
-
-    /* Wait for Google Maps */
-    var gmTries = 0;
-    (function waitGM() {
-      gmTries++;
-      if (window.__rwGMLoaded || (window.google && window.google.maps && window.google.maps.places)) {
-        var ac = new window.google.maps.places.Autocomplete(fAddr, { types: ["address"] });
-        if (ac.setFields) ac.setFields(["address_component"]);
-        ac.addListener("place_changed", function() {
-          var place = ac.getPlace();
-          if (!place || !place.address_components) return;
-          var street = "";
-          place.address_components.forEach(function(comp) {
-            var type = comp.types && comp.types[0];
-            if      (type === "street_number") street = comp.short_name;
-            else if (type === "route")         street = (street ? street + " " : "") + comp.long_name;
-            else if (type === "locality"                    && fCity)  fCity.value  = comp.long_name;
-            else if (type === "administrative_area_level_1" && fState) fState.value = comp.short_name;
-            else if (type === "postal_code"                 && fZip)   fZip.value   = comp.short_name;
-          });
-          if (street) fAddr.value = street;
-          [fAddr, fCity, fState, fZip].forEach(function(f) { if (f) fireInput(f); });
-          renderS2Confirmed();
-          setTimeout(function() {
-            var pac = document.querySelector(".pac-container");
-            if (pac) pac.style.display = "none";
-          }, 300);
-        });
-        renderS2Empty();
-        return;
-      }
-      if (gmTries < 80) setTimeout(waitGM, 150);
-    })();
-
-    fAddr.addEventListener("focus", function() {
-      tryEnable(fAddr);
-      if (!fAddr.value.trim()) renderS2Empty();
-      else if (!addrConfirmed) renderS2NeedsConfirm();
-    });
-    fAddr.addEventListener("input", function() {
-      tryEnable(fAddr);
-      if (!fAddr.value.trim()) renderS2Empty();
-      else if (!addrConfirmed) renderS2NeedsConfirm();
-    });
-
-    /* ─────────────────────────────────────────
-       STEP 3 — NOTES HINT
-    ───────────────────────────────────────── */
-    if (fNotes) {
-      function syncNotes() {
-        var t = (fNotes.value || "").replace(/^\s+|\s+$/g, "");
-        var words = t ? t.split(/\s+/).filter(Boolean).length : 0;
-        if (words >= 2) {
-          s3Hint.className = "rw-hint green";
-          s3Hint.innerHTML = "\u2705 <b>Thank you!</b> This helps your rep arrive prepared and makes your <b>Pro Consultation</b> more efficient.";
-        } else {
-          s3Hint.className = "rw-hint blue";
-          s3Hint.innerHTML = "\uD83D\uDCAC <b>Optional:</b> Add notes about your roof or project to help your rep arrive prepared.";
-        }
-      }
-      fNotes.addEventListener("input", syncNotes);
-      syncNotes();
+    function renderGreen(saved, editing) {
+      bar.className = "rw-contact-status green";
+      bar.innerHTML =
+        '<div class="rw-contact-title">\uD83D\uDC4B Nice to meet you' + (val(first)?", "+val(first):"") + "!</div>" +
+        '<div class="rw-contact-body">Your assigned Roof Worx professional will call or text you the morning of your appointment at <b>' + fmtPhone(val(phone)) + '</b> to confirm their anticipated arrival time within your selected 2-hour window.<br><br>' +
+        '<span style="opacity:.9">Being available allows us to walk the property with you, provide a professional evaluation, answer your questions, and make sure our guidance is tailored to your property.</span><br><br></div>' +
+        '<div style="margin-top:10px;"><button type="button" class="rw-link-btn" id="rw-change-best-contact">\u2192 Change best contact</button>' +
+        '<div class="rw-contact-helper">(person that will be at property)</div></div>' +
+        (saved ? '<div class="rw-saved">\u2705 Contact details updated.</div>' : "") +
+        (editing ? "" : '<div class="rw-next-step">Next: confirm your property address below. \uD83D\uDC47</div>');
+      var btn = document.getElementById("rw-change-best-contact");
+      if (btn) btn.onclick = function() {
+        if (savedTimer) clearTimeout(savedTimer);
+        expandedByUser = true;
+        expand();
+        showCont(true);
+        wireContinue();
+        lastSnap = snap();
+        try{first.focus();}catch(e){}
+      };
     }
 
+    function renderRed() {
+      bar.className = "rw-contact-status red";
+      showCont(false);
+      bar.innerHTML = "\uD83D\uDCDE <b>So your rep can reach you:</b> Please add your " + missing() +
+        '.<div class="rw-next-step">Next: confirm your property address below. \uD83D\uDC47</div>';
+    }
+
+    function update() {
+      var ok = allOk(), s = snap(), changed = s!==lastSnap;
+      if (!ok) {
+        if(savedTimer)clearTimeout(savedTimer);
+        expandedByUser=false; expand(); renderRed(); lastSnap=s; return;
+      }
+      if (expandedByUser) {
+        showCont(true); wireContinue();
+        if (changed) {
+          renderGreen(true,true);
+          if(savedTimer)clearTimeout(savedTimer);
+          savedTimer=setTimeout(function(){if(expandedByUser){renderGreen(false,true);showCont(true);wireContinue();}},1400);
+          lastSnap=s;
+        } else renderGreen(false,true);
+        return;
+      }
+      showCont(false); collapse(); renderGreen(false,false); lastSnap=s;
+    }
+
+    update();
+    first.addEventListener("input",update);
+    last.addEventListener("input",update);
+    phone.addEventListener("input",update);
     return true;
   }
 
-  /* ─────────────────────────────────────────
-     BOOT
-  ───────────────────────────────────────── */
-  var tries = 0;
   (function boot() {
-    tries++;
-    if (init()) return;
-    if (tries < 80) setTimeout(boot, 100);
+    var t=0;
+    (function retry(){ t++; if(initContactStatus())return; if(t<80)setTimeout(retry,100); })();
   })();
+})();
 
+
+/* ═══════════════════════════════════════════════════════
+   SCRIPT 2 — GOOGLE PLACES ADDRESS AUTOCOMPLETE
+═══════════════════════════════════════════════════════ */
+(function () {
+  function byQ(q) {
+    return document.querySelector('[data-q="' + q + '"]') ||
+           document.querySelector('input[name="' + q + '"]');
+  }
+  function closestFieldWrap(el) {
+    var node = el, i = 0;
+    while (node && i < 12) {
+      if (node.className && typeof node.className === "string") {
+        if (node.className.indexOf("form-group") > -1 ||
+            node.className.indexOf("field-container") > -1 ||
+            node.className.indexOf("col-") > -1) return node;
+      }
+      node = node.parentElement;
+      i++;
+    }
+    return el && el.parentElement ? el.parentElement : el;
+  }
+  function findInsertWrap(el) {
+    var node = el, i = 0;
+    while (node && i < 14) {
+      if (node.className && typeof node.className === "string") {
+        if (node.className.indexOf("form-field-wrapper") > -1) return node;
+      }
+      node = node.parentElement;
+      i++;
+    }
+    return closestFieldWrap(el);
+  }
+
+  function hideAddressParts() {
+    ["city","state","postal_code"].forEach(function(q) {
+      var el = byQ(q);
+      if (!el) return;
+      var wrap = closestFieldWrap(el);
+      if (wrap) wrap.style.display = "none";
+    });
+  }
+
+  function addStylesOnce() {
+    if (document.getElementById("rw-address-styles")) return;
+    var css = document.createElement("style");
+    css.id = "rw-address-styles";
+    css.innerHTML =
+      ".rw-confirm-card{margin:0 0 12px;padding:14px 16px;border-radius:12px;font-size:14px;line-height:1.5;text-align:left;border:1px solid rgba(0,0,0,.06);box-shadow:0 10px 24px rgba(0,0,0,.06);transition:background .25s,border-color .25s;}" +
+      ".rw-confirm-card.red{background:rgba(180,48,23,.07);color:#111;border-color:rgba(180,48,23,.14);}" +
+      ".rw-confirm-card.green{background:rgba(0,128,0,.08);color:#111;border-color:rgba(31,90,42,.12);}" +
+      ".rw-confirm-title{font-weight:750;margin:0 0 6px;font-size:15px;}" +
+      ".rw-confirm-sub{opacity:.92;margin:0;font-size:13px;line-height:1.45;}" +
+      ".rw-confirm-addr{margin:12px 0 0;padding:10px 12px;border-radius:10px;background:#fff;color:#111;border:1px solid rgba(0,0,0,.10);font-weight:650;}" +
+      ".rw-confirm-actions{margin:10px 0 0;display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:13px;opacity:.95;}" +
+      ".rw-confirm-btn{display:block;width:100%;margin:12px 0 0;padding:12px 14px;border-radius:12px;border:1px solid rgba(180,48,23,.26);background:rgba(180,48,23,.12);color:#111;font-size:14px;font-weight:900;cursor:pointer;text-align:center;box-shadow:0 12px 26px rgba(0,0,0,.10);transition:background .2s,box-shadow .2s,transform .06s;}" +
+      ".rw-confirm-btn:hover{background:rgba(180,48,23,.16);box-shadow:0 16px 34px rgba(0,0,0,.14);transform:translateY(-1px);}" +
+      ".rw-confirm-btn:active{transform:scale(.99);}" +
+      "[data-q='address']{background:#fff !important;color:#111 !important;}" +
+      ".rw-address-empty{border:3px solid rgba(0,128,0,.38) !important;border-radius:12px !important;}" +
+      ".rw-address-pulse{animation:rwPulse 1.25s ease-in-out infinite;border:2px solid rgba(180,48,23,.45) !important;}" +
+      "@keyframes rwPulse{0%{box-shadow:0 0 0 0 rgba(180,48,23,.22);}70%{box-shadow:0 0 0 10px rgba(180,48,23,0);}100%{box-shadow:0 0 0 0 rgba(180,48,23,0);}}" +
+      ".rw-address-collapsed [data-q='address']{display:none !important;}" +
+      ".rw-address-collapsed label{display:none !important;}";
+    document.head.appendChild(css);
+  }
+
+  function tryEnable(el) {
+    try{el.removeAttribute("readonly");}catch(e){}
+    try{el.removeAttribute("disabled");}catch(e){}
+  }
+
+  function ensureCard(wrap) {
+    if (document.getElementById("rw-confirm-card")) return document.getElementById("rw-confirm-card");
+    var card = document.createElement("div");
+    card.id = "rw-confirm-card";
+    card.className = "rw-confirm-card red";
+    card.innerHTML =
+      '<div class="rw-confirm-title" id="rw-confirm-title"></div>' +
+      '<div class="rw-confirm-sub" id="rw-confirm-sub"></div>' +
+      '<button type="button" id="rw-confirm-btn" class="rw-confirm-btn" style="display:none"></button>' +
+      '<div id="rw-confirm-addr" class="rw-confirm-addr" style="display:none"></div>' +
+      '<div id="rw-confirm-actions" class="rw-confirm-actions" style="display:none">' +
+        '<button type="button" class="rw-link-btn" id="rw-change-address">Change address</button>' +
+        '<span>or add notes below, then press <b>Book Your Pro Consultation</b>.</span>' +
+      '</div>';
+    if (wrap && wrap.parentNode) wrap.parentNode.insertBefore(card, wrap);
+    return card;
+  }
+
+  function setCard(state, title, sub, btnLabel, showBtn) {
+    var card=document.getElementById("rw-confirm-card"); if(!card)return;
+    card.classList.remove("red","green"); card.classList.add(state);
+    var t=document.getElementById("rw-confirm-title");
+    var s=document.getElementById("rw-confirm-sub");
+    var b=document.getElementById("rw-confirm-btn");
+    var a=document.getElementById("rw-confirm-addr");
+    var ac=document.getElementById("rw-confirm-actions");
+    if(t)t.innerHTML=title||"";
+    if(s)s.innerHTML=sub||"";
+    if(b){if(btnLabel)b.innerHTML=btnLabel;b.style.display=showBtn?"block":"none";}
+    if(a)a.style.display="none";
+    if(ac)ac.style.display="none";
+  }
+
+  function initAutocomplete() {
+    var input = byQ("address");
+    if (!input) return;
+    addStylesOnce();
+    hideAddressParts();
+    tryEnable(input);
+    var addrWrap = closestFieldWrap(input);
+    if (!addrWrap) return;
+    var cardWrap = findInsertWrap(input);
+    ensureCard(cardWrap);
+
+    var confirmed = false;
+
+    function fullAddr() {
+      var street=(input.value||"").trim();
+      var c=byQ("city"),st=byQ("state"),z=byQ("postal_code");
+      var parts=[street];
+      if(c&&c.value.trim())parts.push(c.value.trim());
+      if(st&&st.value.trim())parts.push(st.value.trim());
+      if(z&&z.value.trim())parts.push(z.value.trim());
+      return parts.filter(Boolean).join(", ");
+    }
+
+    function showEmpty() {
+      confirmed=false;
+      addrWrap.classList.remove("rw-address-collapsed");
+      input.classList.remove("rw-address-pulse");
+      input.classList.add("rw-address-empty");
+      setCard("red","Enter your street address","Start typing and select the correct property from the dropdown list.","",false);
+    }
+    function showNeedsConfirm(prefill) {
+      confirmed=false;
+      addrWrap.classList.remove("rw-address-collapsed");
+      input.classList.remove("rw-address-empty");
+      input.classList.add("rw-address-pulse");
+      if(prefill) setCard("red","Confirm your property address for your <b>Pro Consultation</b>","Your address was pre-filled. Click below to open the Google Maps dropdown and select the correct property to confirm. \uD83D\uDC47","\uD83D\uDCCD Open Google Maps dropdown",true);
+      else setCard("red","Confirm your property address for your <b>Pro Consultation</b>","Select the correct property from the dropdown list to confirm.","",false);
+    }
+    function showConfirmed() {
+      confirmed=true;
+      input.classList.remove("rw-address-pulse","rw-address-empty");
+      addrWrap.classList.add("rw-address-collapsed");
+      setCard("green","\uD83D\uDC4D Address confirmed","Perfect. Add any helpful notes below, then press <b>Book Your Pro Consultation</b>.","",false);
+      var a=document.getElementById("rw-confirm-addr");
+      var ac=document.getElementById("rw-confirm-actions");
+      if(a){a.textContent=fullAddr()||input.value||"";a.style.display="block";}
+      if(ac)ac.style.display="flex";
+      var notes=document.querySelector('[data-q="appointment_details"]')||document.querySelector("textarea");
+      if(notes)setTimeout(function(){try{notes.scrollIntoView({behavior:"smooth",block:"center"});}catch(e){}},250);
+    }
+
+    setTimeout(function() {
+      var chg=document.getElementById("rw-change-address");
+      if(chg) chg.addEventListener("click",function(){
+        confirmed=false;
+        addrWrap.classList.remove("rw-address-collapsed");
+        setTimeout(function(){try{input.focus();}catch(e){}showNeedsConfirm(false);},150);
+      });
+      var btn=document.getElementById("rw-confirm-btn");
+      if(btn) btn.addEventListener("click",function(){
+        tryEnable(input);
+        setTimeout(function(){
+          try{input.focus();}catch(e){}
+          try{
+            var v=input.value||"";
+            input.value=v+" ";
+            input.dispatchEvent(new Event("input",{bubbles:true}));
+            input.value=v;
+            input.dispatchEvent(new Event("input",{bubbles:true}));
+          }catch(e2){}
+        },120);
+      });
+    }, 100);
+
+    var gmTries=0;
+    (function waitGM(){
+      gmTries++;
+      if(window.__rwGMLoaded||(window.google&&google.maps&&google.maps.places)){
+        var ac=new google.maps.places.Autocomplete(input,{types:["address"]});
+        if(ac.setFields)ac.setFields(["address_component"]);
+        ac.addListener("place_changed",function(){
+          var place=ac.getPlace();
+          if(!place||!place.address_components)return;
+          var c=byQ("city"),st=byQ("state"),z=byQ("postal_code"),street="";
+          place.address_components.forEach(function(comp){
+            var type=comp.types&&comp.types[0];
+            if(type==="street_number")street=comp.short_name;
+            else if(type==="route")street=(street?street+" ":"")+comp.long_name;
+            else if(type==="locality"&&c)c.value=comp.long_name;
+            else if(type==="administrative_area_level_1"&&st)st.value=comp.short_name;
+            else if(type==="postal_code"&&z)z.value=comp.short_name;
+          });
+          if(street)input.value=street;
+          var ev=new Event("input",{bubbles:true});
+          input.dispatchEvent(ev);
+          if(c)c.dispatchEvent(ev);
+          if(st)st.dispatchEvent(ev);
+          if(z)z.dispatchEvent(ev);
+          showConfirmed();
+          setTimeout(function(){var p=document.querySelector(".pac-container");if(p)p.style.display="none";},300);
+        });
+        return;
+      }
+      if(gmTries<80)setTimeout(waitGM,150);
+    })();
+
+    if(!input.value.trim())showEmpty();
+    else showNeedsConfirm(true);
+
+    input.addEventListener("focus",function(){tryEnable(input);if(!input.value.trim())showEmpty();else if(!confirmed)showNeedsConfirm(false);});
+    input.addEventListener("input",function(){tryEnable(input);if(!input.value.trim())showEmpty();else if(!confirmed)showNeedsConfirm(false);});
+  }
+
+  (function boot(){
+    hideAddressParts();
+    var t=0;
+    (function retry(){t++;if(byQ("address")){initAutocomplete();return;}if(t<80)setTimeout(retry,100);})();
+  })();
+})();
+
+
+/* ═══════════════════════════════════════════════════════
+   SCRIPT 3 — APPOINTMENT DETAILS HINT
+═══════════════════════════════════════════════════════ */
+(function () {
+  function addStylesOnce() {
+    if (document.getElementById("rw-details-hint-styles")) return;
+    var css = document.createElement("style");
+    css.id = "rw-details-hint-styles";
+    css.innerHTML =
+      ".rw-details-hint{margin:0 0 12px;padding:12px 14px;border-radius:12px;font-size:14px;line-height:1.5;text-align:left;border:1px solid rgba(0,0,0,.06);box-shadow:0 10px 24px rgba(0,0,0,.06);transition:background .25s,border-color .25s;}" +
+      ".rw-details-hint.neutral{background:rgba(59,130,246,.08);color:#111;border-color:rgba(30,58,138,.10);}" +
+      ".rw-details-hint.green{background:rgba(0,128,0,.08);color:#111;border-color:rgba(31,90,42,.12);}" +
+      ".rw-details-hint b{font-weight:650;}" +
+      ".rw-notes-cta{display:none;margin:12px 0 0;padding:12px 14px;border-radius:12px;border:1px solid rgba(0,0,0,.06);box-shadow:0 10px 24px rgba(0,0,0,.06);background:rgba(0,128,0,.08);color:#111;text-align:left;}" +
+      ".rw-notes-cta .rw-cta-title{font-size:14px;font-weight:750;line-height:1.35;margin:0;}" +
+      ".rw-notes-cta .rw-cta-sub{margin-top:6px;font-size:13px;line-height:1.45;opacity:.92;}" +
+      ".rw-notes-cta .rw-cta-divider{margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,.06);font-size:19px;font-weight:333;color:#1f5a2a;}";
+    document.head.appendChild(css);
+  }
+
+  function initDetailsHint() {
+    addStylesOnce();
+    var details = document.querySelector('[data-q="appointment_details"]') || document.querySelector("textarea");
+    if (!details) return false;
+
+    if (!document.getElementById("rw-details-hint")) {
+      var hint = document.createElement("div");
+      hint.id = "rw-details-hint";
+      hint.className = "rw-details-hint neutral";
+      hint.innerHTML = "\uD83D\uDCAC <b>Optional:</b> Add notes about your roof or gutter project to help your assigned rep arrive prepared for your appointment.";
+      details.parentElement.insertBefore(hint, details);
+    }
+
+    if (!document.getElementById("rw-notes-cta")) {
+      var cta = document.createElement("div");
+      cta.id = "rw-notes-cta";
+      cta.className = "rw-notes-cta";
+      cta.innerHTML =
+        '<div class="rw-cta-title">\u2705 Address confirmed. You\'re ready to book.</div>' +
+        '<div class="rw-cta-sub">Click <b>Book Your Pro Consultation</b> below to lock in your time. We\'ll reach out to confirm details and your anticipated arrival time.</div>' +
+        '<div class="rw-cta-divider">Next Step: Click <b>Book Your Pro Consultation</b> below \uD83D\uDC47</div>';
+      if (details.nextSibling) details.parentElement.insertBefore(cta, details.nextSibling);
+      else details.parentElement.appendChild(cta);
+    }
+
+    var hint = document.getElementById("rw-details-hint");
+    var cta  = document.getElementById("rw-notes-cta");
+
+    function isAddrConfirmed() {
+      if (document.querySelector(".rw-address-collapsed")) return true;
+      var card = document.getElementById("rw-confirm-card");
+      return card && card.className.indexOf("green") > -1;
+    }
+    function wordCount(v) {
+      var t=(v||"").replace(/^\s+|\s+$/g,"");
+      return t?t.split(/\s+/).filter(Boolean).length:0;
+    }
+    function sync() {
+      if(cta)cta.style.display=isAddrConfirmed()?"block":"none";
+      if(!hint)return;
+      if(wordCount(details.value)>=2){
+        hint.className="rw-details-hint green";
+        hint.innerHTML="\u2705 <b>Thank you!</b> This helps your assigned rep arrive prepared and makes your <b>Pro Consultation</b> more efficient.";
+      } else {
+        hint.className="rw-details-hint neutral";
+        hint.innerHTML="\uD83D\uDCAC <b>Optional:</b> Add notes about your roof or gutter project to help your assigned rep arrive prepared for your appointment.";
+      }
+    }
+
+    sync();
+    details.addEventListener("input", sync);
+    var p=0; (function poll(){p++;sync();if(p<80)setTimeout(poll,150);})();
+    return true;
+  }
+
+  (function boot(){
+    var t=0;
+    (function retry(){t++;if(initDetailsHint())return;if(t<60)setTimeout(retry,100);})();
+  })();
 })();
